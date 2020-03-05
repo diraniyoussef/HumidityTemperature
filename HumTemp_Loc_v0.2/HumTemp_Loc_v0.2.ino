@@ -61,6 +61,7 @@ void setup() {
                                 /*We might need more delay time if the PCF was powered from another source.*/    
   //PCF1.decodeEEPROM();  //comment for PCF exclusion  
   AP_op.launch(); /*All embedded in this, the EEPROM connection might begin, NodeMCU might restart, and some important variables might be set*/
+  TempHum tempHum;
 }
 
 void loop() {

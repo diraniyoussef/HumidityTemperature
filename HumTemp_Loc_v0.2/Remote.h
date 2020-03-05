@@ -1,5 +1,6 @@
 #include "TempHum.h"
 #include "espconn.h"
+extern TempHum tempHum;
 
 //it makes sense to define here the remote IP for both classes RemoteServer and InformEntity because they both use the same connection.
 AsynchroClient remote_connection; //intermediate relay server
@@ -205,7 +206,7 @@ public:
 
   static int addTempAndHumToReport( char* totalMessage_buff, int last_length ) {
     /*Now adding the temperature as chars onto the array, then null char, then concatenating directly the humidity, then a null char */
-    TempHum tempHum;
+    
     TempHumValue tempHumValue = tempHum.readValues();
     float temperature = tempHumValue.temperature;
     int humidity = tempHumValue.humidity;
