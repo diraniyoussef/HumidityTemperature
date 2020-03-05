@@ -335,9 +335,9 @@ private:
   }
 
   static void pulsingRST_Pin() {
-    digitalWrite( getRealPinFromD( resetting_pin ), HIGH ); //at this point RST will be connected to GND (according to PCB design)
+    digitalWrite( getRealPinFromD( resetting_pin ), LOW ); //at this point RST will be connected to GND (according to PCB design)
     delay(100);
-    digitalWrite( getRealPinFromD( resetting_pin ), LOW ); //at this point it start HW resetting.
+    digitalWrite( getRealPinFromD( resetting_pin ), HIGH ); //at this point it start HW resetting.
   }
 
   static const boolean out_as_considered = true; //true means ON is HIGH
@@ -369,7 +369,7 @@ public:
   }
 
   static void floatingRST() {
-    digitalWrite( getRealPinFromD( resetting_pin ), LOW );
+    digitalWrite( getRealPinFromD( resetting_pin ), HIGH );
   }
 
   static void HW_RST() {

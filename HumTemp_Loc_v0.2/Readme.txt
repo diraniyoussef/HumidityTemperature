@@ -6,8 +6,11 @@ HumTemp_Loc_v0.1  - Arduino
 
 THIS IS A WORKING VERSION
 
-***Details
+***Problems
 -- 
+
+***Details
+-- AP mode is now an UDP server--Cancelled. It's working fine with the TCP
 
 ***Requirement
 --

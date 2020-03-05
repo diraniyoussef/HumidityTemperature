@@ -4,8 +4,8 @@
 //it makes sense to define here the remote IP for both classes RemoteServer and InformEntity because they both use the same connection.
 AsynchroClient remote_connection; //intermediate relay server
 
-const char* owner_id_buff = "daoud:\0";
-const char* mod_id_buff = "1:\0"; //please select fine values
+const char* owner_id_buff = "wehbe:\0";
+const char* mod_id_buff = "charcoal_humidity_panel:\0"; //please select fine values
 
 class RemoteServerMessageOp {
 private:       
@@ -209,15 +209,24 @@ public:
     TempHumValue tempHumValue = tempHum.readValues();
     float temperature = tempHumValue.temperature;
     int humidity = tempHumValue.humidity;
-    
+    Serial.printf("temperature is %f and humidity is %d\n", temperature, humidity);    
     /*https://stackoverflow.com/questions/27651012/arduino-sprintf-float-not-formatting this is for converting a float onto a C-style string
     * or this if you like https://stackoverflow.com/questions/27651012/arduino-sprintf-float-not-formatting
     * As for converting an int onto a C-style string, you may use itoa(). Using sprintf() is not recommended according to 
     * https://forum.arduino.cc/index.php?topic=596935.0 or http://www.cplusplus.com/reference/cstdlib/itoa/
     * So here is the syntax for both :
     * dtostrf( float_or_double, total_number_of_chars_including_the_decimal_point , number_of_decimal_places, final_buffer_array_or_pointer ); 
-    * As for the total_number_of_chars_including_the_decimal_point, it doesn't have to be increased by 1 to consider the final null char, yet it's not wrong.
+    * As for the total_number_of_chars_including_the_decimal_point, it doesn't have to be increased by 1 to consider the final null char, and I
+    * didn't increase it as it would write it to the right not to the left (a bit weird).
     * itoa( i, buffer, 10 );
+    * 
+    * The format is as follows :
+    * humidity->(1 or more) trailors -> temperature -> 1 or more null chars
+    * temperature is like -.- or --.- (from 0.0 to 99.9)
+    * humidity is like --- (from 0 to 100)
+    * 9->trailor->trailor->trailor->1->2->.->6->'\0'->... (no new trailors at the end. Just null chars)
+    * or 
+    * 2->6->trailor->trailor->0.7->'\0'->... (no new trailors at the end. Just null chars) etc..
     */
     if( humidity > 100 ) {
       humidity = 100;
@@ -232,18 +241,26 @@ public:
      * that is unfilled, I think I will fill it by trailors as well.
      */
     int number_of_filled_chars = 0; 
-    if( humidity < 10 ) {
-      number_of_filled_chars = 1;
+    if( humidity == 100 ) {
+      number_of_filled_chars = 3;
+      Serial.printf("humidity is equal to 100\n");
     }
     if( humidity < 100 ) {
+      Serial.printf("humidity is smaller than 100\n");
       number_of_filled_chars = 2;
     }
-    if( humidity = 100 ) {
-      number_of_filled_chars = 3;
-    }
+    if( humidity < 10 ) {
+      Serial.printf("humidity is smaller than 10\n");
+      number_of_filled_chars = 1;
+    }    
+    
+    const char trailor = 't'; //as for temperature. The trailor being 127 didn't work, maybe since this is a char array and not a byte array
     for( int i = last_length + number_of_filled_chars ; i < last_length + TempHum::Humidity_Int_Size + 1 ; i++ ) {
       totalMessage_buff[ i ] = trailor;
+      Serial.printf("putting a trailor at i %d\n", i);
     }
+    Serial.printf("Till now totalMessage_buff is: %s\n", totalMessage_buff );
+    
     last_length = last_length + TempHum::Humidity_Int_Size + 1; 
     
     if( temperature > 99 ) { //won't be more than 60 as for the used sensor module.
@@ -254,12 +271,16 @@ public:
     }
     for( int i = last_length ; i < last_length + TempHum::Temperature_Float_Size + 1 ; i++ ) {
       totalMessage_buff[ i ] = '\0'; //for technical reasons.
+      Serial.printf("putting a null char at i %d\n", i);
     }
-    dtostrf( temperature, TempHum::Temperature_Float_Size + 1, TempHum::Temperature_Decimals, totalMessage_buff + last_length ); /*I believe 
+    dtostrf( temperature, TempHum::Temperature_Float_Size, TempHum::Temperature_Decimals, totalMessage_buff + last_length ); /*I believe 
     * the +1 to the TempHum::Temperature_Float_Size is not needed here but it's ok.
     */
     //I believe it must end with something like a null char.
-     
+    for( int i = last_length ; i < last_length + TempHum::Temperature_Float_Size ; i++ ) {      
+      Serial.printf("Reading totalMessage_buff[ i ] after putting the temperature in it. At i %d , totalMessage_buff[ i ] is %c\n", i, totalMessage_buff[ i ] );
+    }   
+    
     last_length = last_length + TempHum::Temperature_Float_Size + 1;
     
     return last_length;
@@ -793,7 +814,7 @@ public:
     //remote_connection.setAsynchroClient( "173.243.120.250" , 11360 , 11359 );
     //findRemoteServerIP(); //this is to evaluate remote_server_IP    
     //remote_connection.setAsynchroClient( (char*) remote_server_IP , 11360 , 11359 );    
-    remote_connection.setAsynchroClient( "74.122.199.173" , 120 , 121 );    
+    remote_connection.setAsynchroClient( "74.122.199.173" , 11359 , 11360 );    
     remote_server_message_op.setup( );
 
     //Now managing inform_remote

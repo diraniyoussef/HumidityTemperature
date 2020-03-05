@@ -7,6 +7,8 @@ const byte SSID_Buff_Size = 32;
 const byte Password_Buff_Size = 64;
 const byte Max_IP_Buff_Size = 4;
 const byte MAC_Buff_Size = 12;
+//#include <WiFiUdp.h>
+
 WiFiServer AP_server(3551); /*interesting why this cannot be a private member*/
 /* In the EEPROM or in the received buffer from the user, the info are like one of these: 
  * 6 -> Electrotel_Dirani -> trailor -> onlyforworkpls -> trailor -> header of static IP -> static IP -> trailor -> 
@@ -21,6 +23,7 @@ const byte Max_AP_Buffer_Size = 1 + SSID_Buff_Size + 1 + Password_Buff_Size + 2 
                               MAC_Buff_Size + 1; /*If more than a 255 (because in many places I used 'byte' and not 'int' to refer to the buffer) 
                                                   * which is the byte size then something must be changed in the code below!*/
                               /*should'd been public inside the class*/
+      
 const char trailor = 127; //should'd been public inside the class. 
 /*I chose this char because it is really not a char, it's the delete command, so IT CANNOT BE ENTERED BY THE USER (in SSID and password). 
  * (And I think it has no representation as an escape character like \n or \t.)*/
@@ -41,6 +44,9 @@ private:
   byte gateway_bytes[ Max_IP_Buff_Size ];
   byte subnet_bytes[ Max_IP_Buff_Size ];
   byte MAC_bytes[ 6 ]; /*these are fed to wifi_set_macaddr. The value will be set from the MAC chars in the buffer.*/
+
+//  WiFiUDP Udp;
+  int server_port = 3551;
   
   WiFiClient AP_client;
   
@@ -56,21 +62,31 @@ private:
 
   void runAsAP() {
     /*will restart if failed to run as AP, but normally should never fail*/
-    IPAddress local_IP(172,17,15,30); /*this follows the list of private IP addresses from 172.16.0.0 to 172.31.255.255
+    //IPAddress local_IP(172,17,15,30); 
+    /*this follows the list of private IP addresses from 172.16.0.0 to 172.31.255.255
             * where subnet fixes the first 12 bits (10101100 for the first byte, and 0001xxxx for the second byte), so subnet has to be
             * 255.240.0.0 according to https://en.wikipedia.org/wiki/Private_network */
-    IPAddress gateway(172,18,19,200); //let the gateway be the same as the local_IP, but maybe it works if 192.168.4.251 was the same gateway for all modules.
-    IPAddress subnet(255,240,0,0);
-    if( WiFi.softAPConfig(local_IP, gateway, subnet) ) {
-      Serial.println("runAsAP()   Setting soft-AP ... ");
+    //IPAddress gateway(172,18,19,200); //let the gateway be the same as the local_IP, but maybe it works if 192.168.4.251 was the same gateway for all modules.
+    //IPAddress gateway(172,17,15,30);
+    //IPAddress subnet(255,240,0,0);
+    IPAddress local_IP(192,168,1,1);
+    IPAddress gateway(192,168,1,1);
+    IPAddress subnet(255,255,255,0);
+    WiFi.mode(WIFI_AP); //never used !
+    if( WiFi.softAPConfig(local_IP, gateway, subnet) ) {  
+      Serial.println("runAsAP()   Setting soft-AP ... ");      
       if( WiFi.softAP( "SetPanelNetConfig", "", 1, false, 1 ) ) {/*no password, channel is 1 (as the default value), SSID is not hidden, 
-        * and the last 1 is the max_connection allowed to connect, which is what I really want*/
+        * and the last 1 is the max_connection allowed to connect, which is what I really want*/        
       //if( WiFi.softAP( "SetPanelNetConfig" ) ) {/*no password*/
         Serial.println("runAsAP()      Soft-AP SSID broadcast success...");
         delay (50);//I added it just in case...      
+
+//        Udp.begin( server_port );
+        
         AP_server.begin();
         //I want a server socket
         AP_server.setNoDelay(true);//I think everything you send is directly sent without the need to wait for the buffer to be full
+        Serial.println("runAsAP()      Server should be up and listening by now");
         return;
       }
     }
@@ -86,6 +102,20 @@ private:
     if (connectedStationsNumber > 0){
       //if( AP_client ) {//this should never be tested here because when it is not connected it returns false, so 
       //Serial.printf("In AP mode, AP_client is assumed as not null\n");
+/*
+      int packetSize = Udp.parsePacket();
+      if (packetSize) {
+        Serial.printf("UDP packet is received\n");
+        //must check, in a separate function, that the received packet is from server...
+        int len = Udp.read( buffer_info, Max_AP_Buffer_Size );
+        if (len > 0) { //not needed ?
+          buffer_info[len] = '\0'; //is this like a null character?
+        }
+        //now must check the content of the incoming packet
+        Serial.printf("UDP packet content: %s\n", buffer_info);
+        return true;
+      }
+*/  
       if( AP_client.connected() ) {
         Serial.printf("In AP mode, AP_client is connected\n");
         if( AP_client.available() ) {
@@ -105,6 +135,7 @@ private:
           AP_client.stop();          
         }
       } else {
+        Serial.printf("In AP mode, getIncomingMessage()   no client is connected to the AP's server\n");
         AP_client = AP_server.available();
       }                 
       //}

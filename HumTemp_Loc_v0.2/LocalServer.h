@@ -6,7 +6,7 @@ private:
   //const char* owner_id_buff = "Youssef_70853721:\0";
   //const char* mod_id_buff = "4:\0";
   static const int local_server_mob_Number = 2;
-  const char* local_server_mob_i_Id_buff[ local_server_mob_Number ] = { "Wehbe:\0", "Guest:\0"}; //e.g.(mob_Id_buff + 2)[4] will the 'M' ???  
+  const char* local_server_mob_i_Id_buff[ local_server_mob_Number ] = { "mob1:\0", "Guest_mob:\0"}; //e.g.(mob_Id_buff + 2)[4] will the 'M' ???  
 
   char reading_buff[ Max_Reading_Buffer ];
   int readCharNumber;
@@ -151,6 +151,7 @@ public:
     NodeMCU::yieldAndDelay(); //I think this delay may be useful...
     int last_length = strlen( (const char*) owner_id_buff ) + strlen( (const char*) mod_id_buff ) + strlen( (const char*) mob_id_buff );
     //char* totalMessage_buff = new char[ last_length + 3 * PCF::absolute_max_pins_number + 1 ];
+    Serial.printf("Allocated size to totalMessage_buff is %d\n", last_length + TempHum::Humidity_Int_Size + 1 + TempHum::Temperature_Float_Size + 1 );
     char* totalMessage_buff = new char[ last_length + TempHum::Humidity_Int_Size + 1 + TempHum::Temperature_Float_Size + 1 ];
     strcpy( totalMessage_buff, (const char*) owner_id_buff );
     strcat( totalMessage_buff, (const char*) mod_id_buff );
@@ -220,8 +221,8 @@ private:
   static const int Local_Server_Number = 2; //This will remain 2 in my convention. Never changed
   LocalIncomingClient client_[ Max_Concurrent_Clients ][ Local_Server_Number ];
   WiFiServer server[Local_Server_Number] = {
-    WiFiServer(120), //120 - 3552
-    WiFiServer(121)  //121 - 3553
+    WiFiServer(11359), //120 - 3552
+    WiFiServer(11360)  //121 - 3553
   };
   
   void stopAllClientsOnPort( int port_i ) {
