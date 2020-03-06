@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/local_or_internet"
+        android:orderInCategory="100"
+        android:title="@string/local_or_internet"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/configuration"
+        android:orderInCategory="100"
+        android:title="@string/network_configuration"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/about_app"
+        android:orderInCategory="100"
+        android:title="@string/about_app"
+        app:showAsAction="never" />
+</menu>
