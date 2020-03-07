@@ -16,12 +16,13 @@ import android.view.animation.Animation;
 import android.view.animation.Transformation;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.youssefdirani.temphum_v04.ui.temphum.TempHumFragment;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -33,7 +34,7 @@ import androidx.appcompat.app.AppCompatActivity;
 //import java.io.IOException;
 //import java.io.PrintWriter;
 
-public class ConfigPanel extends AppCompatActivity {
+public class ChooseLocalInternet extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
@@ -147,14 +148,22 @@ public class ConfigPanel extends AppCompatActivity {
                 "Please note that the fields below (if already filled) are not necessarily " +
                 "recommended values. Feel free to change them as suitable.");
 
-        final TextView unmemorizeInMobile_textView = findViewById( R.id.Config_textView_userGuide_UnmemorizeInMobile );
-        unmemorizeInMobile_textView.setText("If this panel is not within the menu, then please check this box.\n" +
-                "If these configurations are intended for the panel shown before then keep it unchecked.");
 
-        final TextView description_router_textView = findViewById(R.id.Config_textView_userGuide_router);
-        description_router_textView.setText("This section is obligatory. It refers solely to this panel.\n" +
+
+
+
+        final TextView description_router_textView = findViewById(R.id.textView_userGuide);
+        description_router_textView.setText("لطفاً حدّد كيف تريد أن \n" +
                 "\t\t\tPlease enter the router's SSID and password." +
                 " (P.S: if no password exists, please leave blank.)");
+
+
+
+
+
+
+
+
 
         final TextView userGuide_staticAllocation_textView = findViewById(R.id.Config_textView_userGuide_staticAllocation);
         userGuide_staticAllocation_textView.setText("The following below text boxes are only for static allocation of " +
@@ -239,7 +248,7 @@ public class ConfigPanel extends AppCompatActivity {
         final TextView rectifyUserInput = findViewById(R.id.Config_warnUser_textView);
 
         final LinearLayout warnUser_layout = findViewById( R.id.Config_warnUser_layout);
-        final ScrollView scrollView = findViewById( R.id.Config_scroll);
+        final ScrollView scrollView = findViewById( R.id.local_internet_scroll);
         final Button warnUser_OkButton = findViewById( R.id.Config_warnUser_buttonOk );
 
         class prefsForFutureSession {
@@ -1310,10 +1319,9 @@ public class ConfigPanel extends AppCompatActivity {
                              */
 
 
-                            final String other_panel_index = bundle.getString("otherPanelIndex"); //This is no longer needed and not used anymore, but left only for compatibility reasons
-                            final CheckBox unmemorizeInMobile_checkBox = findViewById(R.id.checkBox_unmemorizeInMobile);
+                            final String other_panel_index = bundle.getString("otherPanelIndex");
 
-                            if( !static_IP.equals("") && !panel_index.equals( other_panel_index ) && !unmemorizeInMobile_checkBox.isChecked() ) { /*value of static_IP
+                            if( !static_IP.equals("") && !panel_index.equals( other_panel_index ) ) { /*value of static_IP
                                                                                         *is determined in isAllTextsValid()*/
                                 prefs_editor.putString(panel_index, static_IP).apply();
                             }
@@ -1391,24 +1399,8 @@ public class ConfigPanel extends AppCompatActivity {
             So again, focus always wanted to escape after it was correctly acquired by the button.
         */
         final LinearLayout warnUser_layout = findViewById( R.id.Config_warnUser_layout );
-        final ScrollView scrollView = findViewById( R.id.Config_scroll );
+
         final Button warnUser_OkButton = findViewById( R.id.Config_warnUser_buttonOk );
-        if( v == warnUser_OkButton ) {
-            if (event.getAction() == MotionEvent.ACTION_UP && (x >= v.getLeft() && x <= v.getRight() && y >= v.getTop() && y <= v.getBottom())) {
-                //Log.i("Youssef Config.java", "onClick event is on!!");
-                warnUser_layout.setVisibility(View.GONE);
-                scrollView.setAlpha( 1 );
-                if( editable != null ) {
-                    editable.clear();
-                }
-                scrollView.setFocusable(true);
-                scrollView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
-                if( editText != null){
-                    editText.requestFocus();
-                }
-                showKeyboard();
-            }
-        }
 
         //This block is made to clear focus of EditTexts
         if( v instanceof EditText) {

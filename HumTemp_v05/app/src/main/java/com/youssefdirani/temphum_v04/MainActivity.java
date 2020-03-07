@@ -18,6 +18,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.MutableLiveData;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -29,8 +30,10 @@ import com.google.android.material.navigation.NavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
+    private NavController navController;
     private AppBarConfiguration mAppBarConfiguration;
     final public Toasting toasting = new Toasting( this );
+    public String panel_index;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +63,24 @@ public class MainActivity extends AppCompatActivity {
                 R.id.nav_tools, R.id.nav_share, R.id.nav_send)
                 .setDrawerLayout(drawer)
                 .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+        /* //this is working (tested and worked). This is not needed.
+        NavDestination currentDestination = navController.getCurrentDestination();
+        if( currentDestination != null ) {
+            int navControllerDestinationId = currentDestination.getId();
+            if ( navControllerDestinationId == R.id.nav_temphum) {
+                Log.i("MainAct..", "Youssef, navControllerDestinationId is well known and reachable");
+            } else {
+                Log.i("MainAct..", "Youssef, navControllerDestinationId is not reachable");
+            }
+        } else {
+            Log.i("MainAct..", "Youssef, navControllerDestinationId is null");
+        }
+        */
 
+        //MenuItem item = getfra
     }
 
     protected void onResume() {
@@ -128,25 +145,24 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public final String panel_index = "charcoal_humidity_panel"; /*this shouldn't be here. Better be in the fragment. but ok.
-        I didn't know how to access the fragment, though I tried.
-    */
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
+            case R.id.local_or_internet:
+
+                return true;
             case R.id.about_app:
                 startActivity(new Intent(getApplicationContext(), AppDescription.class));
                 return true;
             case R.id.configuration:
                 final Intent intent = new Intent();
-                final String  other_panel_index = "-1"; //I can make it any value but -1 is preferred
+                final String other_panel_index = "-1"; //I can make it any value but -1 is preferred
                 intent.putExtra("panelName", getString(R.string.app_name) );
                 intent.putExtra("panelIndex", panel_index ); //panel index will be used to set the static IP.
                 //if the panel index corresponds to this "other panel" we won't assign then any static IP.
                 intent.putExtra("otherPanelIndex", other_panel_index ); /*used to compare the panel index with
-                    this extra panel index*/
+                    this extra panel index. This is not relevant anymore. I'm only keeping it for compatibility but not used.*/
                 intent.setClass(getApplicationContext(), ConfigPanel.class);
                 startActivity(intent);
                 /*

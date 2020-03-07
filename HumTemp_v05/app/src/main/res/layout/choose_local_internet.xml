@@ -9,38 +9,8 @@
     android:focusableInTouchMode="true"
     android:focusedByDefault="true">
 
-    <LinearLayout
-        android:id="@+id/Config_warnUser_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerHorizontal="false"
-        android:layout_centerInParent="false"
-        android:focusableInTouchMode="true"
-        android:focusedByDefault="true"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <TextView
-            android:id="@+id/Config_warnUser_textView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="Rectifying User Input" />
-
-        <Button
-            android:id="@+id/Config_warnUser_buttonOk"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="false"
-            android:layout_marginTop="10dp"
-            android:focusableInTouchMode="true"
-            android:focusedByDefault="true"
-            android:text="OK" />
-    </LinearLayout>
-
     <ScrollView
-        android:id="@+id/Config_scroll"
+        android:id="@+id/local_internet_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -61,44 +31,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginTop="10dp"
-                    android:focusable="false"
-                    android:background="@drawable/border"
-                    android:orientation="vertical">
-
-                    <Button
-                        android:id="@+id/Config_button_overviewExplanation"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal|center"
-                        android:text="+ Show Overview Explanation" />
-
-                    <LinearLayout
-                        android:id="@+id/Config_LinearLayout_overviewExplanation"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_margin="5dp"
-
-                        android:focusable="false"
-                        android:orientation="vertical"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/Config_textView_userGuide_overviewExplanation"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Guide text to user"
-                            android:textSize="16sp" />
-
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
                     android:layout_marginBottom="5dp"
                     android:layout_marginEnd="5dp"
                     android:layout_marginLeft="5dp"
@@ -110,7 +42,7 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/Config_textView_userGuide_router"
+                        android:id="@+id/textView_userGuide"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_margin="5dp"
@@ -732,41 +664,6 @@
 
                         </LinearLayout>
                     </LinearLayout>
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/Config_Panel_UnmemorizeInMobile_Section"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="15dp"
-                    android:background="@drawable/border"
-                    android:focusable="false"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/Config_textView_userGuide_UnmemorizeInMobile"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Guide text to user"
-                        android:textSize="16sp" />
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:focusable="false"
-                        android:orientation="vertical">
-                        <CheckBox
-                            android:id="@+id/checkBox_unmemorizeInMobile"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            app:buttonTint="#37000000"
-                            android:text="unrelate mobile to panel"
-                            android:textColor="@android:color/secondary_text_light"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
 
                 </LinearLayout>
 
