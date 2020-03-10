@@ -17,6 +17,7 @@ import android.view.animation.Transformation;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -48,9 +49,12 @@ public class ConfigPanel extends AppCompatActivity {
     private Editable editable;
     private EditText editText;
     private volatile String obeyingIP_message = "";
-
+    private String panel_index, panel_name, original_panel_index; //original_panel_index is made because of "unrelate mobile to panel" thing. It's a way to solve things.
     //volatile private byte sent_messages_number = 0;
     volatile private byte max_sent_messages_number = 0;
+
+    private SharedPreferences network_prefs;
+    private SharedPreferences.Editor prefs_editor;
 
     @Override
     protected void onStart(){
@@ -67,6 +71,12 @@ public class ConfigPanel extends AppCompatActivity {
             finish();
             return;
         }
+        panel_index = bundle.getString("panelIndex");
+        if( panel_index == null || //by mistake if happened.
+                panel_index.equals( "" ) ) { //by mistake if happened.
+            panel_index = "";
+        }
+        original_panel_index = panel_index;
         //Log.i("Youssef ConfigPanel", "now about to setContentView");
         setContentView(R.layout.config_panel);
         obeyingIP0_EditText[0] = findViewById(R.id.Config_editText_obey0IP0);
@@ -98,10 +108,9 @@ public class ConfigPanel extends AppCompatActivity {
         Mac_EditText[4] = findViewById(R.id.Config_editText_MAC4);
         Mac_EditText[5] = findViewById(R.id.Config_editText_MAC5);
 
-        final String panel_name = bundle.getString("panelName");
-        setTitle( "Network Configuration - " + panel_name );
+        panel_name = bundle.getString("panelName");
+        setTitleWithPanelName();
 
-        final String panel_index = bundle.getString("panelIndex");
         final String panel_type = bundle.getString("panelType");
         String tell_user_type_of_panel = "";
         if( panel_type == null ) { //needed !
@@ -109,7 +118,8 @@ public class ConfigPanel extends AppCompatActivity {
         } else {
             if( panel_type.equals("informing") ) {
                 tell_user_type_of_panel = "Please be noted that you should be now standing in front of an " +
-                        "informing panel. I.e. one which has either button(s) or contact(s) but not relays.<br/><br/>";
+                        "informing panel. I.e. one which has either sensor(s), button(s) or contact(s) " +
+                        "but not relays.<br/><br/>";
             } else if( panel_type.equals("obeying") ) {
                 tell_user_type_of_panel = "Please be noted that you should be now standing in front of a " +
                         "listening-and-executing panel. I.e. one which has relay(s).<br/><br/>";
@@ -162,6 +172,11 @@ public class ConfigPanel extends AppCompatActivity {
                 "If you want your router to automatically assign an IP for the panel, please do empty all below fields.\n" +
                 "Otherwise, do fill them all.");
 
+        final TextView userGuide_localOrInternet_textView = findViewById(R.id.Config_textView_userGuide_localOrInternet);
+        userGuide_localOrInternet_textView.setText( "We assign here whether the panel (not your mobile app) is able " +
+                "to communicate locally, through Internet, or in both means." );
+
+
         final LinearLayout overviewExplanation_LinearLayout = findViewById(R.id.Config_LinearLayout_overviewExplanation);
         final Button overviewExplanation_button = findViewById( R.id.Config_button_overviewExplanation );
         overviewExplanation_button.setOnClickListener(new View.OnClickListener() {
@@ -180,15 +195,54 @@ public class ConfigPanel extends AppCompatActivity {
             }
         });
 
+        final CheckBox unmemorizeInMobile_checkBox = findViewById(R.id.checkBox_unmemorizeInMobile);
+        unmemorizeInMobile_checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView,
+                                         boolean isChecked) {
+                if (isChecked) {
+                    setTitle( "Network Configuration - General Panel" );
+                    panel_index = "";
+                } else {
+                    setTitleWithPanelName();
+                    panel_index = original_panel_index;
+                }
+            }
+        });
+
         /*User must be now connected to the panel's SSID. I can make a check whether the WIFI is on or not,
         * and whether the mobile is connected to the specified SSID or not, but later.*/
         /*Once the "Set" button is pressed, we must :
         * 1) check the validity of the entered data. We will also instruct the user to fix the error.
         * 2) connects to a predefined socket and sends the info.*/
-        final SharedPreferences network_prefs = getSharedPreferences("network_config", 0); /*this shared preference
+        network_prefs = getSharedPreferences(panel_index + "_networkConfig", 0); /*this shared preference
         *not only serves for static IPs gotten in activities of panels, but also it serves to remember the last
         *entered values of edit texts by the user*/
-        final SharedPreferences.Editor prefs_editor = network_prefs.edit();
+        prefs_editor = network_prefs.edit();
+
+        final CheckBox local_checkBox = findViewById(R.id.checkBox_local);
+        Log.i("Config...", "Youssef/ local checkbox prefs is " + network_prefs.getBoolean( "local", true ));
+        local_checkBox.setChecked( network_prefs.getBoolean( "local", true ) ); //didn't use local_checkBox.getTag().toString() instead of "local"
+        local_checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView,
+                                         boolean isChecked) {
+                //prefs_editor.putBoolean( local_checkBox.getTag().toString(), isChecked ).apply(); //maybe it's better to  use getTag() but no need to complicate things
+                prefs_editor.putBoolean( "local", isChecked ).apply();
+            }
+        });
+
+        final CheckBox internet_checkBox = findViewById(R.id.checkBox_internet);
+        Log.i("Config...", "Youssef/ internet checkbox prefs is " + network_prefs.getBoolean( "internet", true ));
+        internet_checkBox.setChecked( network_prefs.getBoolean( "internet", true ) ); //didn't use internet_checkBox.getTag().toString()
+        internet_checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView,
+                                         boolean isChecked) {
+                //prefs_editor.putBoolean( internet_checkBox.getTag().toString(), isChecked ).apply();//maybe it's better to  use getTag() but no need to complicate things
+                prefs_editor.putBoolean( "internet", isChecked ).apply();
+            }
+        });
 
         SSID_EditText.setText( network_prefs.getString( SSID_EditText.getTag().toString(), "MySSID") );
         Password_EditText.setText( network_prefs.getString( Password_EditText.getTag().toString(), "MyPassword") );
@@ -246,19 +300,24 @@ public class ConfigPanel extends AppCompatActivity {
             private EditText eT;
             private prefsForFutureSession( EditText eT_arg ) {
                 eT = eT_arg;
-                eT.addTextChangedListener(TextWatcher);
+                //Log.i("Youssef Config", "First Text watcher" + eT.getTag().toString());
+                android.text.TextWatcher textWatcher = new TextWatcher() {
+                    @Override
+                    public void onTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
+                    }
+
+                    @Override
+                    public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable ed) {
+                        prefs_editor.putString(eT.getTag().toString(), eT.getText().toString()).apply();
+                        //Log.i("Youssef Config", "First Text watcher" + eT.getTag().toString());
+                    }
+                };
+                eT.addTextChangedListener(textWatcher);
             }
-            private android.text.TextWatcher TextWatcher = new TextWatcher() {
-                @Override
-                public void onTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-                @Override
-                public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-                @Override
-                public void afterTextChanged(Editable ed) {
-                    prefs_editor.putString( eT.getTag().toString(), eT.getText().toString() ).apply();
-                    //Log.i("Youssef Config", "First Text watcher" + eT.getTag().toString());
-                }
-            };
         }
 
         class checkUserIP {
@@ -421,7 +480,7 @@ public class ConfigPanel extends AppCompatActivity {
                 * then trailor then header of gateway IP then the gateway IP then trailor then header of subnet then subnet then
                  * trailor then 12 MAC characters then trailor then null char*/
 
-        final byte message_byte[] = new byte [Max_AP_Buffer_Size]; /*while this is declared as final but the value of
+        final byte[] message_byte = new byte [Max_AP_Buffer_Size]; /*while this is declared as final but the value of
         *every element of the array can yet be changed. check https://www.geeksforgeeks.org/final-arrays-in-java/ */
 
         class ConnectToPanel extends Thread { //it's a little weird that the class is inside a method. Anyway, there isn't even a warning.
@@ -617,10 +676,11 @@ public class ConfigPanel extends AppCompatActivity {
 
             private boolean isAllTextsValid() {
                 /*What is this method useful for?
-                * In case of a non-valid user entry, we will notify (toast) the user about it here.
+                * In case of a non-valid user entry, we will notify (toast - and not using warnUser_layout) the user about it here.
                 *static_IP will also be assigned in this method. As well as setting the "message" variable.
                 * "message" will be something like 1SSID\n or 2SSID\nPassword\n or 5SSID\nStaticIP\nGatewayIP\nSubnet\nMAC\n or
                 * 6SSID\nPassword\nStaticIP\nGatewayIP\nSubnet\nMAC\n
+                * (I have added to the end of this message either l\n (for local), i\n (for internet), or b\n (for both))
                 * This method also sends the obeying IP (if filled at all, and if filled correctly) of 1 (in this version) obeying panel.
                 * Thus if the obeying IP is filled, it prepares 2 messages, one for the obeying IP and another for the network configuration
                   * of the particular panel the mobile app connects to, and this method will also set the value of
@@ -788,7 +848,14 @@ public class ConfigPanel extends AppCompatActivity {
                         index_to_fill_message_byte++;
                         message_byte[index_to_fill_message_byte] = '\0';
                     }
-                    return true;
+
+                    if( local_checkBox.isChecked() ) {
+                        local_checkBox.requestFocus(); //doesn't work
+                        toasting.toast("It looks like you want this panel to communicate locally.\n" +
+                                "In this case you must fill the static IP configurations.", Toast.LENGTH_LONG, false);
+                        return false;
+                    }
+                //here we were almost goind to return true...
                 } else {
                     if(IP0.equals("") || IP1.equals("") || IP2.equals("") || IP3.equals("") || gatewayIP0.equals("") ||
                             gatewayIP1.equals("") || gatewayIP2.equals("") || gatewayIP3.equals("") || subnet0.equals("") ||
@@ -1253,8 +1320,17 @@ public class ConfigPanel extends AppCompatActivity {
                     * and all numbers like 0000010010101010 won't be complemented by 2.
                     * What's important is the bits that are sent and interpreted by Arduino.
                     */
-                    return true;
+
                 }
+                if( !local_checkBox.isChecked() && !internet_checkBox.isChecked() ) {
+                    local_checkBox.requestFocus(); //not working for some reason
+                    toasting.toast("Please make sure you have selected how the panel communicates with the system.\n" +
+                            "You must select at least one of the 2 boxes : \"Local Network\" or \"Internet\".",
+                            Toast.LENGTH_LONG, false);
+                    return false;
+                }
+
+                return true;
             }
 
             private int bitwiseMultiply_loose( int n1, int n2 ) { /*I named it loose because it's a not bitwise and really,
@@ -1289,6 +1365,7 @@ public class ConfigPanel extends AppCompatActivity {
             private AfterSetButtonPressed() { //it's really interesting how this can be private and still be used outside!
 
                 final Button set_button = findViewById( R.id.Config_Set_button );
+
                 set_button.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View view) {
                         if( isAllTextsValid() ) {/*isAllTextsValid() also sets the message(s) to be sent*/
@@ -1301,7 +1378,7 @@ public class ConfigPanel extends AppCompatActivity {
                                 toasting.toast("Please wait a few seconds...", Toast.LENGTH_LONG, false);
                                 return;
                             }
-                            /*We will check if the values of the text boxes are valid. If ok and if there's an IP and if it was a panel
+                            /*We have checked whether the values of the text boxes are valid. If ok and if there's an IP and if it was a panel
                              * that this mobile app will communicate to locally, then we will save the info in a shared prefs and will
                              * send the network configuration in a best effort manner to the panel. (We are not getting an acknowledge from
                              * the panel whether info were saved correctly or not. And this is not a big problem; user can always try again.)
@@ -1309,14 +1386,23 @@ public class ConfigPanel extends AppCompatActivity {
                             /* If max_sent_messages_number is 2 then the 2 messages are set and ready by now
                              */
 
-
                             final String other_panel_index = bundle.getString("otherPanelIndex"); //This is no longer needed and not used anymore, but left only for compatibility reasons
-                            final CheckBox unmemorizeInMobile_checkBox = findViewById(R.id.checkBox_unmemorizeInMobile);
 
-                            if( !static_IP.equals("") && !panel_index.equals( other_panel_index ) && !unmemorizeInMobile_checkBox.isChecked() ) { /*value of static_IP
-                                                                                        *is determined in isAllTextsValid()*/
-                                prefs_editor.putString(panel_index, static_IP).apply();
+                            /*
+                            if( //!static_IP.equals("") && //I want to allow to set the static IP to nothing. E.g. panel had a static IP and now it doesn't.
+                                    !panel_index.equals( "" ) && //This may be made on purpose, e.g. unmemorizeInMobile_checkBox is checked.
+                                    !panel_index.equals( other_panel_index ) && //should never happen; I don't rely onother_panel_index anymore.
+                                    !unmemorizeInMobile_checkBox.isChecked() ) //that is perfectly fine now.
+                                    {
+                                    //value of static_IP is determined in isAllTextsValid()
+                                prefs_editor.putString("staticIP", static_IP).apply();
                             }
+                        */
+                            //value of static_IP is determined in isAllTextsValid()
+                            if( !panel_index.equals( other_panel_index ) ) { //which is now the case after I cancelled the other_panel_index
+                                prefs_editor.putString("staticIP", static_IP).apply();
+                            }
+
                             connectToPanel_networkConf.start();
 
                             if( max_sent_messages_number == 2 ) {
@@ -1342,6 +1428,10 @@ public class ConfigPanel extends AppCompatActivity {
             }
         });
 
+    }
+
+    void setTitleWithPanelName() {
+        setTitle( "Network Configuration - " + panel_name );
     }
 
     private void hideKeyboard() {

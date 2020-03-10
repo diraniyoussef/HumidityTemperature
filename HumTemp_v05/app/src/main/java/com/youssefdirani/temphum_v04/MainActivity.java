@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private NavController navController;
     private AppBarConfiguration mAppBarConfiguration;
     final public Toasting toasting = new Toasting( this );
-    public String panel_index;
+    public String panel_index, panel_name, panel_type;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,22 +79,47 @@ public class MainActivity extends AppCompatActivity {
             Log.i("MainAct..", "Youssef, navControllerDestinationId is null");
         }
         */
-
-        //MenuItem item = getfra
     }
 
     protected void onResume() {
         super.onResume();
-
+        /*//cancelled as I made a dedicated activity for local or internet information fetching
         final ToggleButton tb = findViewById(R.id.toggleButton_internet_local);
-        connect(tb);
+        updateConnectionMeans(tb);
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i("humtemp main", "inside tb setonclickListener");
-                connect(tb);
+                updateConnectionMeans(tb);
             }
         });
+
+        private void updateConnectionMeans( ToggleButton tb ) {
+            if( tb == null ) return;
+            if(tb.isChecked()) { //internet
+                //localNotInternet.setValue("internet");
+                tb.setTextColor( getTextColorPrimary() );
+                Log.i("HumTemp MainAct", "trying local connection");
+            } else {//local
+                //localNotInternet.setValue("local");
+                tb.setTextColor(Color.parseColor("#D81B60"));
+                Log.i("HumTemp MainAct", "trying internet connection");
+            }
+        }
+
+        private int getTextColorPrimary() { //getting text_color_primary. I could had simply searched for the color number, but it's ok.
+            TypedValue typedValue = new TypedValue();
+            Resources.Theme theme = this.getTheme();
+            theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
+            TypedArray arr = this.obtainStyledAttributes(typedValue.data, new int[]{
+                    android.R.attr.textColorPrimary
+            });
+            int primaryColor = arr.getColor(0, -1);
+            arr.recycle();
+            return primaryColor;
+        }
+         */
+
         /* //this piece of code didn't work when panel_index was a public variable in HomeFragment
         HomeFragment fragment_tempHum = (HomeFragment) getSupportFragmentManager().findFragmentById(R.id.nav_home);
         if( fragment_tempHum != null ) {
@@ -105,38 +130,13 @@ public class MainActivity extends AppCompatActivity {
          */
     }
 
-    public MutableLiveData<String> localNotInternet = new MutableLiveData<>(); //this is to propagate the value to the fragment
+    //public MutableLiveData<String> localNotInternet = new MutableLiveData<>(); //this is to propagate the value to the fragment
     public String owner_part = "wehbe";
     //String mob_part = "S7_Edge";
     //String mob_part = "S4";
     public String mob_part = "mob1"; //usr2 is kept in the store
     //String mob_part = "Mom_Tab";
     public String mob_Id = owner_part + ":" + mob_part + ":";
-
-    private void connect( ToggleButton tb ) {
-        if( tb == null ) return;
-        if(tb.isChecked()) { //internet
-            localNotInternet.setValue("internet");
-            tb.setTextColor( getTextColorPrimary() );
-            Log.i("HumTemp MainAct", "trying local connection");
-        } else {//local
-            localNotInternet.setValue("local");
-            tb.setTextColor(Color.parseColor("#D81B60"));
-            Log.i("HumTemp MainAct", "trying internet connection");
-        }
-    }
-
-    private int getTextColorPrimary() { //getting text_color_primary. I could had simply searched for the color number, but it's ok.
-        TypedValue typedValue = new TypedValue();
-        Resources.Theme theme = this.getTheme();
-        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
-        TypedArray arr = this.obtainStyledAttributes(typedValue.data, new int[]{
-                android.R.attr.textColorPrimary
-        });
-        int primaryColor = arr.getColor(0, -1);
-        arr.recycle();
-        return primaryColor;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) { //This is for the menu on the top right I guess
@@ -149,18 +149,16 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            case R.id.local_or_internet:
-
-                return true;
             case R.id.about_app:
                 startActivity(new Intent(getApplicationContext(), AppDescription.class));
                 return true;
             case R.id.configuration:
                 final Intent intent = new Intent();
                 final String other_panel_index = "-1"; //I can make it any value but -1 is preferred
-                intent.putExtra("panelName", getString(R.string.app_name) );
+                intent.putExtra("panelName", panel_name );
                 intent.putExtra("panelIndex", panel_index ); //panel index will be used to set the static IP.
                 //if the panel index corresponds to this "other panel" we won't assign then any static IP.
+                intent.putExtra("panelType", panel_type );
                 intent.putExtra("otherPanelIndex", other_panel_index ); /*used to compare the panel index with
                     this extra panel index. This is not relevant anymore. I'm only keeping it for compatibility but not used.*/
                 intent.setClass(getApplicationContext(), ConfigPanel.class);

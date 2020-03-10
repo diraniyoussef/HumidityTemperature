@@ -7,7 +7,6 @@
     <string name="nav_header_desc">Navigation header</string>
     <string name="about_app">حول التطبيق</string>
     <string name="network_configuration">Network Configuration</string>
-    <string name="local_or_internet">شبكة داخلية أو إنترنت</string>
 
     <string name="menu_temphum">حرارة - رطوبة</string>
     <string name="menu_waterheater">سخّان المياه</string>

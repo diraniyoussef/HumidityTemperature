@@ -2,20 +2,22 @@ package com.youssefdirani.temphum_v04;
 
 public class ServerConfig {
 
-    public ServerConfig(String panel_index , String panel_name ) {
+    public ServerConfig( String panel_index, String panel_name, int port1, int port2 ) {
         this.panel_index = panel_index;
         this.panel_name = panel_name;
+        this.port1 = port1;
+        this.port2 = port2;
     }
 
     String panel_name;
     public String staticIP = "";
 
-    static private int port1 = 11359; //choose good ports, e.g. 43111; doesn't work. 256 and 257 work.
+    private int port1; //choose good ports, e.g. 43111; doesn't work. 256 and 257 work.
     //static private int port1 = 11357;
-    static private int port2 = 11360;
+    private int port2;
     //static private int port2 = 11358;
 
-    public String panel_index;
+    String panel_index;
     int getPortFromIndex(int index) {
         if (index == 0) {
             return port1;
