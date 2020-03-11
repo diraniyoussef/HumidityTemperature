@@ -328,7 +328,7 @@ class CommunicateWithServer {
             mob = incomingMessage.substring( first_colon + 1, next_colon );
 
             return owner.equalsIgnoreCase(owner_part) && mob.equalsIgnoreCase(mob_part) &&
-                    mod.equalsIgnoreCase(String.valueOf(parentSocketConnection.selectedServerConfig.panel_index));
+                    mod.equalsIgnoreCase(String.valueOf(parentSocketConnection.selectedServerConfig.getPanelIndex()));
         }
 
         @Override
@@ -582,7 +582,7 @@ class CommunicateWithServer {
                      * so we will send a dummy message, but it's the signature that matters.
                      */
                     if( !localNotInternet ) {
-                        printMessage(mob_Id + String.valueOf(parentSocketConnection.selectedServerConfig.panel_index) + ":" +
+                        printMessage(mob_Id + String.valueOf(parentSocketConnection.selectedServerConfig.getPanelIndex()) + ":" +
                                 "mob_HI\0");/* message content part must include something, not just a null char - We're not interested
                                         * in getting a reply to this message although we might get it ! It's only
                                         * to let the intermediate server recognize the just made socket info. This practice is necessary for servers

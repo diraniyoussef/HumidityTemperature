@@ -2,11 +2,13 @@ package com.youssefdirani.temphum_v04;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.Html;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -29,6 +31,7 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 //import java.io.IOException;
@@ -40,12 +43,15 @@ public class ConfigPanel extends AppCompatActivity {
     }
     private static final int IP_Portions_Number = 4;
     private static final int MAC_Portions_Number = 6;
-    private EditText SSID_EditText, Password_EditText;
+    private EditText SSID_EditText, Password_EditText, localPort1_EditText,
+            localPort2_EditText, internetPort1_EditText, internetPort2_EditText;
     private EditText[] obeyingIP0_EditText = new EditText[ IP_Portions_Number ],
             obeyingIP1_EditText = new EditText[ IP_Portions_Number ],
             IP_EditText = new EditText[ IP_Portions_Number ],
             gatewayIP_EditText = new EditText[ IP_Portions_Number ],
-            subnet_EditText = new EditText[ IP_Portions_Number ], Mac_EditText = new EditText[ MAC_Portions_Number ];
+            subnet_EditText = new EditText[ IP_Portions_Number ],
+            internetIP_EditText = new EditText[ IP_Portions_Number ],
+            Mac_EditText = new EditText[ MAC_Portions_Number ];
     private Editable editable;
     private EditText editText;
     private volatile String obeyingIP_message = "";
@@ -107,6 +113,15 @@ public class ConfigPanel extends AppCompatActivity {
         Mac_EditText[3] = findViewById(R.id.Config_editText_MAC3);
         Mac_EditText[4] = findViewById(R.id.Config_editText_MAC4);
         Mac_EditText[5] = findViewById(R.id.Config_editText_MAC5);
+        //Now admin section
+        internetIP_EditText[0] = findViewById(R.id.Config_editText_internetIP0);
+        internetIP_EditText[1] = findViewById(R.id.Config_editText_internetIP1);
+        internetIP_EditText[2] = findViewById(R.id.Config_editText_internetIP2);
+        internetIP_EditText[3] = findViewById(R.id.Config_editText_internetIP3);
+        localPort1_EditText = findViewById(R.id.Config_editText_localPort1);
+        localPort2_EditText = findViewById(R.id.Config_editText_localPort2);
+        internetPort1_EditText = findViewById(R.id.Config_editText_internetPort1);
+        internetPort2_EditText = findViewById(R.id.Config_editText_internetPort2);
 
         panel_name = bundle.getString("panelName");
         setTitleWithPanelName();
@@ -142,6 +157,19 @@ public class ConfigPanel extends AppCompatActivity {
                 "probably notify you about that).<br/>" +
                 "And by now, congratulations! You have successfully saved the network configuration onto the panel.<br/>" +
                 "You may go back to normal operation.") );
+
+        final TextView admin_textView = findViewById( R.id.Config_textView_userGuide_Admin );
+        admin_textView.setText("1) Just keep them filled anyway :\n" +
+                "Since this is intended for me only, I haven't made restrictions control, e.g. " +
+                "logically speaking, local ports must not be filled when the static IP is not filled (nevertheless, " +
+                "I have kept them filled and that's fine), and internet ports " +
+                "and IP must absolutely be filled when the static IP section is not filled. When I say 'static IP', I " +
+                "also mean the 'Local Network' and 'Internet' checkboxes.\n" +
+                "When 'unrelate mobile to panel' is checked, the values don't really matter then.\n\n" +
+                "2) Note also that the entered values here do not configure the panel (for now). They only " +
+                "configure the mobile panels' fragments\n\n" +
+                "3) Usually, when you want to make use of this section, 'unrelate mobile to panel' must be " +
+                "unchecked beforehand");
 
         final TextView obeyingIPs_textView = findViewById( R.id.Config_textView_userGuide_obeyingIPs );
         obeyingIPs_textView.setText("This section is intended only for a panel that is " +
@@ -195,6 +223,44 @@ public class ConfigPanel extends AppCompatActivity {
             }
         });
 
+        final Toasting toasting = new Toasting( this );
+
+        final Button adminExpansion_button = findViewById( R.id.Config_button_AdminExpansion );
+        final LinearLayout admin_LinearLayout = findViewById(R.id.Config_LinearLayout_AdminTexts);
+
+        adminExpansion_button.setOnClickListener( new View.OnClickListener() {
+            public void onClick( View view ) {
+                //usually I want to hide this section as it contains the IP of the server.
+                AlertDialog.Builder builder = new AlertDialog.Builder(ConfigPanel.this);
+                builder.setTitle("Password");
+                // Set up the input
+                final EditText input = new EditText(ConfigPanel.this);
+                // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                builder.setView(input);
+                // Set up the buttons
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if( input.getText().toString().equals("Shmegevod0") ) {
+                            expand(admin_LinearLayout);
+                            adminExpansion_button.setEnabled(false);
+                        } else {
+                            toasting.toast("Wrong password. Please contact the manufacturer +961/70/853721", Toast.LENGTH_LONG, false);
+                        }
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+            }
+        });
+
         final CheckBox unmemorizeInMobile_checkBox = findViewById(R.id.checkBox_unmemorizeInMobile);
         unmemorizeInMobile_checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -203,9 +269,11 @@ public class ConfigPanel extends AppCompatActivity {
                 if (isChecked) {
                     setTitle( "Network Configuration - General Panel" );
                     panel_index = "";
+                    setSharedPreferencesVariables();
                 } else {
                     setTitleWithPanelName();
                     panel_index = original_panel_index;
+                    setSharedPreferencesVariables();
                 }
             }
         });
@@ -215,10 +283,7 @@ public class ConfigPanel extends AppCompatActivity {
         /*Once the "Set" button is pressed, we must :
         * 1) check the validity of the entered data. We will also instruct the user to fix the error.
         * 2) connects to a predefined socket and sends the info.*/
-        network_prefs = getSharedPreferences(panel_index + "_networkConfig", 0); /*this shared preference
-        *not only serves for static IPs gotten in activities of panels, but also it serves to remember the last
-        *entered values of edit texts by the user*/
-        prefs_editor = network_prefs.edit();
+        setSharedPreferencesVariables();
 
         final CheckBox local_checkBox = findViewById(R.id.checkBox_local);
         Log.i("Config...", "Youssef/ local checkbox prefs is " + network_prefs.getBoolean( "local", true ));
@@ -243,6 +308,13 @@ public class ConfigPanel extends AppCompatActivity {
                 prefs_editor.putBoolean( "internet", isChecked ).apply();
             }
         });
+
+        //The default values here in this admin section are worthless. It takes the default value from the caller fragment
+        localPort1_EditText.setText(network_prefs.getString( localPort1_EditText.getTag().toString(), "11359") );
+        localPort2_EditText.setText(network_prefs.getString( localPort2_EditText.getTag().toString(), "11360") );
+        internetPort1_EditText.setText(network_prefs.getString( internetPort1_EditText.getTag().toString(), "11359") );
+        internetPort2_EditText.setText(network_prefs.getString( internetPort2_EditText.getTag().toString(), "11360") );
+
 
         SSID_EditText.setText( network_prefs.getString( SSID_EditText.getTag().toString(), "MySSID") );
         Password_EditText.setText( network_prefs.getString( Password_EditText.getTag().toString(), "MyPassword") );
@@ -272,6 +344,11 @@ public class ConfigPanel extends AppCompatActivity {
         Mac_EditText[3].setText( network_prefs.getString( Mac_EditText[3].getTag().toString(), "") );
         Mac_EditText[4].setText( network_prefs.getString( Mac_EditText[4].getTag().toString(), "") );
         Mac_EditText[5].setText( network_prefs.getString( Mac_EditText[5].getTag().toString(), "") );
+        //Now the admin. BTW, default values here are worthless; we got now real values, based on the fact that we enter the fragment and putStrings there before we reach here
+        internetIP_EditText[0].setText( network_prefs.getString( internetIP_EditText[0].getTag().toString(), "") );
+        internetIP_EditText[1].setText( network_prefs.getString( internetIP_EditText[1].getTag().toString(), "") );
+        internetIP_EditText[2].setText( network_prefs.getString( internetIP_EditText[2].getTag().toString(), "") );
+        internetIP_EditText[3].setText( network_prefs.getString( internetIP_EditText[3].getTag().toString(), "") );
 
         //obeyingIP_message (this section has to be after getting texts from shared preferences)
         final String obeying0IP0 = obeyingIP0_EditText[0].getText().toString();
@@ -465,8 +542,16 @@ public class ConfigPanel extends AppCompatActivity {
         new checkUserMAC(Mac_EditText[3]);
         new checkUserMAC(Mac_EditText[4]);
         new checkUserMAC(Mac_EditText[5]);
+        new checkUserIP(internetIP_EditText[0]);
+        new checkUserIP(internetIP_EditText[1]);
+        new checkUserIP(internetIP_EditText[2]);
+        new checkUserIP(internetIP_EditText[3]);
         new prefsForFutureSession(SSID_EditText);
         new prefsForFutureSession(Password_EditText);
+        new prefsForFutureSession(localPort1_EditText);
+        new prefsForFutureSession(localPort2_EditText);
+        new prefsForFutureSession(internetPort1_EditText);
+        new prefsForFutureSession(internetPort2_EditText);
         //new prefsForFutureSession(IP_EditText[0]); //It's not wrong to add another TextWatcher to this editText
         //but we restrained from doing that because we don't want to save faulty data to prefs
 
@@ -612,8 +697,6 @@ public class ConfigPanel extends AppCompatActivity {
                 still_sending = false;
             }
         }
-
-        final Toasting toasting = new Toasting( this );
 
         class AfterSetButtonPressed {
             private final byte trailor = 127; /*same trailor used in panels to be configured.
@@ -1430,6 +1513,13 @@ public class ConfigPanel extends AppCompatActivity {
 
     }
 
+    void setSharedPreferencesVariables() {
+        network_prefs = getSharedPreferences(panel_index + "_networkConfig", 0); /*this shared preference
+         *not only serves for static IPs gotten in activities of panels, but also it serves to remember the last
+         *entered values of edit texts by the user*/
+        prefs_editor = network_prefs.edit();
+    }
+
     void setTitleWithPanelName() {
         setTitle( "Network Configuration - " + panel_name );
     }
@@ -1510,12 +1600,17 @@ public class ConfigPanel extends AppCompatActivity {
                 //to struggle with xml file...
                 SSID_EditText.clearFocus();
                 Password_EditText.clearFocus();
+                localPort1_EditText.clearFocus();
+                localPort2_EditText.clearFocus();
+                internetPort1_EditText.clearFocus();
+                internetPort2_EditText.clearFocus();
                 for (int i = 0; i < IP_Portions_Number; i++) {
                     obeyingIP0_EditText[i].clearFocus();
                     obeyingIP1_EditText[i].clearFocus();
                     IP_EditText[i].clearFocus();
                     gatewayIP_EditText[i].clearFocus();
                     subnet_EditText[i].clearFocus();
+                    internetIP_EditText[i].clearFocus();
                 }
                 for (int i = 0; i < MAC_Portions_Number; i++)
                     Mac_EditText[i].clearFocus();

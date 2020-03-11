@@ -36,7 +36,7 @@ public class SocketConnection { //some methods are not static in this class, thi
         this.localNotInternet = localNotInternet;
         selectedServerConfig = selectedServerConfig_arg;
         communication = new CommunicateWithServer( toasting, act, applicationContextParam, this,
-                selectedServerConfig.panel_index, selectedServerConfig.panel_name, number_of_data_chunks,
+                selectedServerConfig.getPanelIndex(), selectedServerConfig.panel_name, number_of_data_chunks,
                 localNotInternet, owner_part, mob_part, mob_Id );
         this.toasting = toasting;
         silentToast = isSilentToast;
@@ -142,7 +142,7 @@ public class SocketConnection { //some methods are not static in this class, thi
                 } catch (Exception e) {
                     //Thread.currentThread().interrupt();
                     e.printStackTrace();
-                    Log.i("Youssef Serv...java", "Error: closing socket." + " For panel index " + selectedServerConfig.panel_index);
+                    Log.i("Youssef Serv...java", "Error: closing socket." + " For panel index " + selectedServerConfig.getPanelIndex());
                 }
             }
             return (false);
@@ -156,7 +156,7 @@ public class SocketConnection { //some methods are not static in this class, thi
                     } catch (Exception e) {
                         //Thread.currentThread().interrupt();
                         e.printStackTrace();
-                        Log.i("Youssef Serv...java", "Error: closing socket." + " For panel index " + selectedServerConfig.panel_index);
+                        Log.i("Youssef Serv...java", "Error: closing socket." + " For panel index " + selectedServerConfig.getPanelIndex());
                     }
                 }
                 return (false);
@@ -182,18 +182,18 @@ public class SocketConnection { //some methods are not static in this class, thi
                 //client.connect(new InetSocketAddress(wiFiConnection.chosenIPConfig.staticIP, port), 1500);
                 client[index] = new Socket();
                 Log.i("Youssef Serv...java", "client[index " + index + "] is fine to connect to IP " +
-                        selectedServerConfig.staticIP + " on port " + selectedServerConfig.getPortFromIndex(index));
+                        selectedServerConfig.getStaticIP() + " on port " + selectedServerConfig.getPortFromIndex(index));
                 //client.connect(new InetSocketAddress("192.168.4.201", port),1500);
-                client[index].connect( new InetSocketAddress(selectedServerConfig.staticIP,
+                client[index].connect( new InetSocketAddress(selectedServerConfig.getStaticIP(),
                         selectedServerConfig.getPortFromIndex(index)), socket_waitingData.timeout );
 
                 //client.setSoTimeout(0); //no need to set it to infinite since all it does, if it were not infinite, is to throw an exception; it does not affect the socket.
                 Log.i("Youssef Serv...java", "Socket " + index + " " +
-                        "is connected, for panel index " + selectedServerConfig.panel_index + " on port " +
+                        "is connected, for panel index " + selectedServerConfig.getPanelIndex() + " on port " +
                         "selectedServerConfig.getPortFromIndex(index)");
 
                 printWriter[index] = new PrintWriter( client[index].getOutputStream() );
-                Log.i("Youssef Serv...java", "New printWriter is made, for panel index " + selectedServerConfig.panel_index);
+                Log.i("Youssef Serv...java", "New printWriter is made, for panel index " + selectedServerConfig.getPanelIndex());
 
                 communication.renew_bufferThread(index);
                 //Log.i("Youssef Serv...java", "New bufferThread is made." + " For panel  index " + selectedServerConfig.panel_index);
@@ -207,11 +207,11 @@ public class SocketConnection { //some methods are not static in this class, thi
                     } catch (Exception exc) {
                         //Thread.currentThread().interrupt();
                         exc.printStackTrace();
-                        Log.i("Youssef Serv...java", "Error: closing socket." + " For panel index " + selectedServerConfig.panel_index);
+                        Log.i("Youssef Serv...java", "Error: closing socket." + " For panel index " + selectedServerConfig.getPanelIndex());
                     }
                 }
                 //it's probably better to call      destroySocket(index);       but to be checked later.
-                Log.i("Youssef Serv...java", "Exception is thrown. For panel index " + selectedServerConfig.panel_index +
+                Log.i("Youssef Serv...java", "Exception is thrown. For panel index " + selectedServerConfig.getPanelIndex() +
                         " on port " + selectedServerConfig.getPortFromIndex(index));
                 socketCreationSuccessful = false;
                 //Now turn off the WiFi
