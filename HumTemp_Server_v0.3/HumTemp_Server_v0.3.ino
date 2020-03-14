@@ -20,23 +20,31 @@ PCF PCF1( address_PCF , in_pins_number_PCF1 , in_pin_PCF1 , out_pins_number_PCF1
 */
 //************************************************End of block.
 boolean main_oper_vars_need_to_be_reset = true; /*Necessary. This won't be taken into effect unless NodeMCU connects to router*/
-//Remote remote; //this is about both server (receiving requests) and client (informing other entities) functionalities.
-//InformLocal inform_local;
+Remote remote; //this is about both server (receiving requests) and client (informing other entities) functionalities.
+InformLocal inform_local;
 LocalServer local_server;
 
 AP_Op AP_op;
 boolean first_time_switchToAPMode_lock = false;
 
-void setupMainVars() {
+void setupMainVars( boolean isInformRemote ) {
   NodeMCU::getInPinsState();
-  local_server.serverSetup(); //to receive report requests from mobile.
-  //remote.setup(); 
+  if( AP_op.isLocalServer ) {
+    local_server.serverSetup(); //to receive report requests from mobile.
+  }
+  if( AP_op.isInternetServer ) { 
+    remote.setup( isInformRemote ); 
+  }
   //inform_local.setup(); //no need to since the necessary info are not deleted
 }
 
 void stopMainOperationsAndDisconnect() {/*this involves stopping and resetting the needed things to normal in case we returned back to normal operation*/
-  local_server.stopOperations();
-  //remote.stopOperations();
+  if( AP_op.isLocalServer ) {  
+    local_server.stopOperations();
+  }
+  if( AP_op.isInternetServer ) { 
+    remote.stopOperations();
+  }
   //inform_local.stopOperations();
   if( WiFi.status()== WL_CONNECTED )
     WiFi.disconnect(true); /*normally the last among them*/
@@ -120,7 +128,7 @@ void loop() {
         if( main_oper_vars_need_to_be_reset ) { /*This is true after any first-time successful connection to router. This will ocur at the beginning
                                                  * and at the exit of the AP mode when it happens*/
           main_oper_vars_need_to_be_reset = false;
-          setupMainVars();
+          setupMainVars( false );
         }
         toggle_connect_failure_notifier_pin = false; /*I have to set it at the beginning of each loop. This variable may be changed in 
                                                       * class AsynchroClient and class InformEntity
@@ -138,11 +146,15 @@ void loop() {
           //informing registered local servers
           //inform_local.process(); //this mantains connections to every local server (preprocessing and postprocessing) and sends a report when an IN pin changes
           
-          //run as remote server for incoming requests from remote clients (currently mobiles). Also it runs the InformRemote functionality.
-          //remote.process();
+          //run as remote server for incoming requests from remote clients (currently mobiles). Also it runs the InformRemote functionality if isInformRemote was true.
+          if( AP_op.isInternetServer ) { 
+            remote.process();
+          }
           
           //run as local server for incoming requests from local clients (currently mobiles)
-          local_server.process();
+          if( AP_op.isLocalServer ) { 
+            local_server.process();
+          }
       
           if( toggle_connect_failure_notifier_pin ) {
             NodeMCU::toggleConnectFailureNotifierPin();

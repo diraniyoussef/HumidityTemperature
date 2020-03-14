@@ -401,49 +401,63 @@ public class ConfigPanel extends AppCompatActivity {
             private EditText eT;
             private checkUserIP( EditText eT_arg ) {
                 eT = eT_arg;
-                eT.addTextChangedListener(IP_TextWatcher);
-            }
-            private TextWatcher IP_TextWatcher = new TextWatcher() {
-                @Override
-                public void onTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-                @Override
-                public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-                @Override
-                public void afterTextChanged(Editable ed) {
-                    String s = ed.toString();
+                /*
+                    if(s == null) { //compiler says that this is always false
+                        return;
+                    }*/
+                //e.g. 06 instead of just 6
+                /*
+                    if(warnUser_OkButton.requestFocus()) {
+                        //    Log.i("Youssef Config", "ok button got focus");
+                    } else {
+                        //  Log.i("Youssef Config", "ok button didn't get focus");
+                    }
+                    */
+                //the following 2 lines is to fix a weird problem of stealing focus
+                TextWatcher IP_TextWatcher = new TextWatcher() {
+                    @Override
+                    public void onTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
+                    }
+
+                    @Override
+                    public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable ed) {
+                        String s = ed.toString();
                     /*
                     if(s == null) { //compiler says that this is always false
                         return;
                     }*/
-                    if( !s.equals("")) {
-                        editable = ed;
-                        editText = eT;
-                        if( s.length() > 1 && s.charAt(0) == '0' ) { //e.g. 06 instead of just 6
-                            rectifyUserInput.setText("Do you mean '0' ?");
-                            showNotification();
-                            return;
-                        }
+                        if (!s.equals("")) {
+                            editable = ed;
+                            editText = eT;
+                            if (s.length() > 1 && s.charAt(0) == '0') { //e.g. 06 instead of just 6
+                                rectifyUserInput.setText("Do you mean '0' ?");
+                                showNotification();
+                                return;
+                            }
 
-                        int IP;
-                        try {
-                            IP = Integer.parseInt( s );
+                            int IP;
+                            try {
+                                IP = Integer.parseInt(s);
+                            } catch (NumberFormatException e) {
+                                IP = -1;
+                            }
+                            if (IP < 0 || IP > 255) {
+                                rectifyUserInput.setText("Please enter valid number between 0 and 255");
+                                showNotification();
+                                return;
+                            }
                         }
-                        catch (NumberFormatException e)
-                        {
-                            IP = -1;
-                        }
-                        if( IP < 0 || IP > 255 ) {
-                            rectifyUserInput.setText("Please enter valid number between 0 and 255");
-                            showNotification();
-                            return;
-                        }
+                        prefs_editor.putString(eT.getTag().toString(), eT.getText().toString()).apply();
                     }
-                    prefs_editor.putString( eT.getTag().toString(), eT.getText().toString() ).apply();
-                }
-                private void showNotification() {
-                    warnUser_layout.setVisibility(View.VISIBLE);
-                    scrollView.setAlpha( (float)0.2 );
-                    warnUser_OkButton.requestFocus();
+
+                    private void showNotification() {
+                        warnUser_layout.setVisibility(View.VISIBLE);
+                        scrollView.setAlpha((float) 0.2);
+                        warnUser_OkButton.requestFocus();
                     /*
                     if(warnUser_OkButton.requestFocus()) {
                         //    Log.i("Youssef Config", "ok button got focus");
@@ -451,18 +465,79 @@ public class ConfigPanel extends AppCompatActivity {
                         //  Log.i("Youssef Config", "ok button didn't get focus");
                     }
                     */
-                    hideKeyboard();
-                    //the following 2 lines is to fix a weird problem of stealing focus
-                    scrollView.setFocusable(false);
-                    scrollView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-                }
-            };
+                        hideKeyboard();
+                        //the following 2 lines is to fix a weird problem of stealing focus
+                        scrollView.setFocusable(false);
+                        scrollView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+                    }
+                };
+                eT.addTextChangedListener(IP_TextWatcher);
+            }
         }
 
         class checkUserMAC {
             private EditText eT;
             private checkUserMAC( EditText eT_arg ) {
                 eT = eT_arg;
+                //please note that by its nature, this method is for char by char usage
+                /*
+                    if(s == null) { //compiler says that this is always false
+                        return;
+                    }*/
+                /*
+                            if(warnUser_OkButton.requestFocus()) {
+                                //    Log.i("Youssef Config", "ok button got focus");
+                            } else {
+                                //  Log.i("Youssef Config", "ok button didn't get focus");
+                            }
+                            */
+                //the following 2 lines is to fix a weird problem of stealing focus
+                TextWatcher MAC_TextWatcher = new TextWatcher() {
+                    @Override
+                    public void onTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
+                    }
+
+                    @Override
+                    public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable ed) { //please note that by its nature, this method is for char by char usage
+                        String s = ed.toString();
+                    /*
+                    if(s == null) { //compiler says that this is always false
+                        return;
+                    }*/
+                        if (!s.equals("")) {
+                            boolean char1IsHex, char2IsHex = true;
+                            char1IsHex = checkIfHex(s.charAt(0));
+                            if (s.length() == 2) {
+                                char2IsHex = checkIfHex(s.charAt(1));
+                            }
+                            if (!char1IsHex || !char2IsHex) {
+                                editable = ed;
+                                editText = eT;
+                                rectifyUserInput.setText("Please enter only hexadecimals (from 0 to F)");
+                                warnUser_layout.setVisibility(View.VISIBLE);
+                                scrollView.setAlpha((float) 0.2);
+                                warnUser_OkButton.requestFocus();
+                            /*
+                            if(warnUser_OkButton.requestFocus()) {
+                                //    Log.i("Youssef Config", "ok button got focus");
+                            } else {
+                                //  Log.i("Youssef Config", "ok button didn't get focus");
+                            }
+                            */
+                                hideKeyboard();
+                                //the following 2 lines is to fix a weird problem of stealing focus
+                                scrollView.setFocusable(false);
+                                scrollView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+                                return;
+                            }
+                        }
+                        prefs_editor.putString(eT.getTag().toString(), eT.getText().toString()).apply();
+                    }
+                };
                 eT.addTextChangedListener(MAC_TextWatcher);
             }
 
@@ -472,48 +547,6 @@ public class ConfigPanel extends AppCompatActivity {
                         c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' );
             }
 
-            private TextWatcher MAC_TextWatcher = new TextWatcher() {
-                @Override
-                public void onTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-                @Override
-                public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {}
-                @Override
-                public void afterTextChanged(Editable ed) { //please note that by its nature, this method is for char by char usage
-                    String s = ed.toString();
-                    /*
-                    if(s == null) { //compiler says that this is always false
-                        return;
-                    }*/
-                    if( !s.equals("") ) {
-                        boolean char1IsHex, char2IsHex = true;
-                        char1IsHex = checkIfHex( s.charAt(0) );
-                        if(s.length() == 2) {
-                            char2IsHex = checkIfHex( s.charAt(1) );
-                        }
-                        if( !char1IsHex || !char2IsHex ) {
-                            editable = ed;
-                            editText = eT;
-                            rectifyUserInput.setText("Please enter only hexadecimals (from 0 to F)");
-                            warnUser_layout.setVisibility(View.VISIBLE);
-                            scrollView.setAlpha( (float)0.2 );
-                            warnUser_OkButton.requestFocus();
-                            /*
-                            if(warnUser_OkButton.requestFocus()) {
-                                //    Log.i("Youssef Config", "ok button got focus");
-                            } else {
-                                //  Log.i("Youssef Config", "ok button didn't get focus");
-                            }
-                            */
-                            hideKeyboard();
-                            //the following 2 lines is to fix a weird problem of stealing focus
-                            scrollView.setFocusable(false);
-                            scrollView.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-                            return;
-                        }
-                    }
-                    prefs_editor.putString( eT.getTag().toString(), eT.getText().toString() ).apply();
-                }
-            };
         }
 
         new checkUserIP(obeyingIP0_EditText[0]);
@@ -559,13 +592,16 @@ public class ConfigPanel extends AppCompatActivity {
         final int Password_Buff_Size = 64;
         final int Max_IP_Buff_Size = 4;
         final int MAC_Buff_Size = 12;
+        final int Local_Or_Internet_Size = 1; //'l' for local, 'i' for Internet, 'b' for both
         final int Max_AP_Buffer_Size = 1 + SSID_Buff_Size + 1 + Password_Buff_Size + 1 + 1 + Max_IP_Buff_Size + 1
-                + 1 + Max_IP_Buff_Size + 1 + 1 + Max_IP_Buff_Size + 1 + MAC_Buff_Size + 1 + 1; /*It is like this :
+                + 1 + Max_IP_Buff_Size + 1 + 1 + Max_IP_Buff_Size + 1 + MAC_Buff_Size + 1 + Local_Or_Internet_Size + 1 + 1; /*You may see the format
+                * of the message to be sent in the description of the method isAllTextsValid()
+                * It is like this :
                 * determinant then SSID then trailor then password then trailor then header of static IP then the static IP
                 * then trailor then header of gateway IP then the gateway IP then trailor then header of subnet then subnet then
                  * trailor then 12 MAC characters then trailor then null char*/
 
-        final byte[] message_byte = new byte [Max_AP_Buffer_Size]; /*while this is declared as final but the value of
+        final byte[] message_byte = new byte[ Max_AP_Buffer_Size ]; /*while this is declared as final but the value of
         *every element of the array can yet be changed. check https://www.geeksforgeeks.org/final-arrays-in-java/ */
 
         class ConnectToPanel extends Thread { //it's a little weird that the class is inside a method. Anyway, there isn't even a warning.
@@ -587,6 +623,7 @@ public class ConfigPanel extends AppCompatActivity {
                     still_waiting = false;
                 }
             };
+            /*
             private final Handler waitThenSendSecondMessage_Handler = new Handler();
             private final Runnable runnable1 = new Runnable() {
                 public void run() {
@@ -604,6 +641,7 @@ public class ConfigPanel extends AppCompatActivity {
                     }
                 }
             };
+             */
 
             ConnectToPanel( int AP_port ) {
                 this.AP_port = AP_port;
@@ -619,8 +657,8 @@ public class ConfigPanel extends AppCompatActivity {
                      * Anyway, here we're ASSUMING (and I suppose it is the case) that the max_sent_messages_number
                      * refers to the messages we are interested in sending, which are :
                      * - the obeying IP and the network config of the panel if max_sent_messages_number was 2
-                     * - or just the network config of the panel if max_sent_messages_number was 1*/
-/*
+                     * - or just the network config of the panel if max_sent_messages_number was 1
+
                         still_sending = true;
                     }
 */
@@ -651,10 +689,10 @@ public class ConfigPanel extends AppCompatActivity {
                     /*this follows the list of private IP addresses from 172.16.0.0 to 172.31.255.255
                      * where subnet fixes the first 12 bits (10101100 for the first byte, and 0001xxxx for the second byte), so subnet has to be
                      * 255.240.0.0 according to https://en.wikipedia.org/wiki/Private_network*/
-                    //String AP_IP = "172.17.15.30";
-                    String AP_IP = "192.168.1.1";
+                    String AP_IP = "172.17.15.30";
+                    //String AP_IP = "192.168.1.1";
                     client.connect( new InetSocketAddress( AP_IP, AP_port ) );
-/*                  //I had an attempt to make UDP communication, but I didn't had luckily
+/*                  //I had an attempt to make UDP communication, but I didn't have ? luckily
                     DatagramSocket ds = null;
                     byte[] ipAddr = new byte[]{ (byte) 192, (byte) 168,(byte) 1, (byte) 1};
                     InetAddress addr = InetAddress.getByAddress(ipAddr);
@@ -676,6 +714,7 @@ public class ConfigPanel extends AppCompatActivity {
                         Log.i("Youssef ConfigPanel", "ObeyingIP message should be sent by now. And it is");
                         //waitThenSendSecondMessage_Handler.postDelayed(runnable1, 500);
                     } else if( AP_port == NetworkConf_Port ) {
+                        Log.i("ConfigPanel","Youssef/ First byte of the sent message is : " + message_byte[0] );
                         outputStream.write( message_byte );
                         outputStream.flush();
                     }
@@ -733,7 +772,7 @@ public class ConfigPanel extends AppCompatActivity {
                      * in case of four 0 IP bytes, we'll put header which is 16 (and then trailor of course)
                  */
                 byte header = 0;
-                byte IP_bytes[] = new byte[ Max_IP_Buff_Size ];
+                byte[] IP_bytes = new byte[ Max_IP_Buff_Size ];
                 IP_bytes[0] = first_byte;
                 IP_bytes[1] = second_byte;
                 IP_bytes[2] = third_byte;
@@ -761,14 +800,23 @@ public class ConfigPanel extends AppCompatActivity {
                 /*What is this method useful for?
                 * In case of a non-valid user entry, we will notify (toast - and not using warnUser_layout) the user about it here.
                 *static_IP will also be assigned in this method. As well as setting the "message" variable.
-                * "message" will be something like 1SSID\n or 2SSID\nPassword\n or 5SSID\nStaticIP\nGatewayIP\nSubnet\nMAC\n or
-                * 6SSID\nPassword\nStaticIP\nGatewayIP\nSubnet\nMAC\n
-                * (I have added to the end of this message either l\n (for local), i\n (for internet), or b\n (for both))
-                * This method also sends the obeying IP (if filled at all, and if filled correctly) of 1 (in this version) obeying panel.
+                *The old days :
+                * "message" will be something like 1SSID->trailor or 2SSID->trailor->Password->trailor or
+                * 5SSID->trailor->header->StaticIP->trailor->header->GatewayIP->trailor->header->Subnet->trailor->MAC->trailor or
+                * 6SSID->trailor->Password->trailor->header->StaticIP->trailor->header->GatewayIP->trailor->header->Subnet->trailor->MAC->trailor
+                * Now :
+                * I have added to the end of this message either l\n (for local), i\n (for internet), or b\n (for both)
+                * "message" will be something like 2SSID->trailor or 3SSID->trailor->Password->trailor or
+                * 6SSID->trailor->header->StaticIP->trailor->header->GatewayIP->trailor->header->Subnet->trailor->
+                * MAC->trailor->local_or_internet_or_both->trailor or
+                * 7SSID->trailor->Password->trailor->header->StaticIP->trailor->header->GatewayIP->trailor->header->Subnet->trailor->
+                * MAC->trailor->local_or_internet_or_both->trailor
+
+                * * This method also sends the obeying IP (if filled at all, and if filled correctly) of 1 (in this version) obeying panel.
                 * Thus if the obeying IP is filled, it prepares 2 messages, one for the obeying IP and another for the network configuration
                   * of the particular panel the mobile app connects to, and this method will also set the value of
                   * max_sent_messages_number to 2. If the obeying IP is not filled, then this method prepares only one message and
-                   * max_sent_messages_number will be 1.
+                  * max_sent_messages_number will be 1.
                 */
 
                 static_IP = "";
@@ -809,7 +857,7 @@ public class ConfigPanel extends AppCompatActivity {
                             obeyingIP0_EditText[1].requestFocus();
                         } else if (obeying0IP2.equals("")) {
                             obeyingIP0_EditText[2].requestFocus();
-                        } else if (obeying0IP3.equals("")) {
+                        } else { //meaning if (obeying0IP3.equals("")) which is always true
                             obeyingIP0_EditText[3].requestFocus();
                         }
                         toasting.toast("Usually the fields of the static items must all be filled.",
@@ -825,7 +873,7 @@ public class ConfigPanel extends AppCompatActivity {
                                     obeyingIP1_EditText[1].requestFocus();
                                 } else if( obeying1IP2.equals("") ) {
                                     obeyingIP1_EditText[2].requestFocus();
-                                } else if( obeying1IP3.equals("") ) {
+                                } else { //meaning if( obeying1IP3.equals("") ) which is always true
                                     obeyingIP1_EditText[3].requestFocus();
                                 }
                                 toasting.toast("Usually the fields of the static items must all be filled.",
@@ -906,18 +954,16 @@ public class ConfigPanel extends AppCompatActivity {
                     if(password.equals("")) {
                         //message = "1" + SSID + trailor;
                         index_to_fill_message_byte = 0;
-                        message_byte[index_to_fill_message_byte] = 1;
+                        message_byte[index_to_fill_message_byte] = 2;
                         index_to_fill_message_byte++;
                         for(int i = 0; i < SSID.length(); i++ )
                             message_byte[ index_to_fill_message_byte + i ] = (byte) SSID.charAt(i);
                         index_to_fill_message_byte = index_to_fill_message_byte + SSID.length();
                         message_byte[index_to_fill_message_byte] = trailor;
-                        index_to_fill_message_byte++;
-                        message_byte[index_to_fill_message_byte] = '\0';//I'm hoping that this prevents the array from being sent as a whole
                     } else {
                         //message = "2" + SSID + trailor + password + trailor;
                         index_to_fill_message_byte = 0;
-                        message_byte[index_to_fill_message_byte] = 2;
+                        message_byte[index_to_fill_message_byte] = 3;
                         index_to_fill_message_byte++;
                         for(int i = 0; i < SSID.length(); i++ )
                             message_byte[ index_to_fill_message_byte + i ] = (byte) SSID.charAt(i);
@@ -928,8 +974,6 @@ public class ConfigPanel extends AppCompatActivity {
                             message_byte[ index_to_fill_message_byte + i ] = (byte) password.charAt(i);
                         index_to_fill_message_byte = index_to_fill_message_byte + password.length();
                         message_byte[index_to_fill_message_byte] = trailor;
-                        index_to_fill_message_byte++;
-                        message_byte[index_to_fill_message_byte] = '\0';
                     }
 
                     if( local_checkBox.isChecked() ) {
@@ -938,7 +982,8 @@ public class ConfigPanel extends AppCompatActivity {
                                 "In this case you must fill the static IP configurations.", Toast.LENGTH_LONG, false);
                         return false;
                     }
-                //here we were almost goind to return true...
+
+                    //here we were almost going to return true...
                 } else {
                     if(IP0.equals("") || IP1.equals("") || IP2.equals("") || IP3.equals("") || gatewayIP0.equals("") ||
                             gatewayIP1.equals("") || gatewayIP2.equals("") || gatewayIP3.equals("") || subnet0.equals("") ||
@@ -1260,7 +1305,7 @@ public class ConfigPanel extends AppCompatActivity {
                     * not the whole of it will be sent to the panel...
                     */
                         index_to_fill_message_byte = 0;
-                        message_byte[index_to_fill_message_byte] = 5;
+                        message_byte[index_to_fill_message_byte] = 6;
                         index_to_fill_message_byte++;
                         for(int i = 0; i < SSID.length(); i++ )
                             message_byte[ index_to_fill_message_byte + i ] = (byte) SSID.charAt(i);
@@ -1307,9 +1352,6 @@ public class ConfigPanel extends AppCompatActivity {
                         message_byte[index_to_fill_message_byte] = (byte) mac5.charAt(1);
                         index_to_fill_message_byte++;
                         message_byte[index_to_fill_message_byte] = trailor;
-                        index_to_fill_message_byte++;
-                        message_byte[index_to_fill_message_byte] = '\0';
-
                     } else {
                       /*
                         message = "6" + SSID +
@@ -1345,7 +1387,7 @@ public class ConfigPanel extends AppCompatActivity {
                                 trailor;
                       */
                         index_to_fill_message_byte = 0;
-                        message_byte[index_to_fill_message_byte] = 6;
+                        message_byte[index_to_fill_message_byte] = 7;
                         index_to_fill_message_byte++;
                         for(int i = 0; i < SSID.length(); i++ )
                             message_byte[ index_to_fill_message_byte + i ] = (byte) SSID.charAt(i);
@@ -1393,10 +1435,8 @@ public class ConfigPanel extends AppCompatActivity {
                         message_byte[index_to_fill_message_byte] = (byte) mac5.charAt(1);
                         index_to_fill_message_byte++;
                         message_byte[index_to_fill_message_byte] = trailor;
-                        index_to_fill_message_byte++;
-                        message_byte[index_to_fill_message_byte] = '\0';
                     }
-                    //Log.i("Youssef config.j", message);
+                    //Log.i("Config...", "Youssef/ " + message);
                     /*message in Log.i will appear falsely represented, but don't be worried about it, in short data types,
                     * all numbers like 1000010010101010 starting with 1 are considered negative and complemented by 2 and you'll
                     * see the '-' sign.
@@ -1412,6 +1452,22 @@ public class ConfigPanel extends AppCompatActivity {
                             Toast.LENGTH_LONG, false);
                     return false;
                 }
+
+                //here comes the info of the local or internet...
+                index_to_fill_message_byte++;
+                if( local_checkBox.isChecked() && !internet_checkBox.isChecked() ) {
+                    message_byte[index_to_fill_message_byte] = 'l';
+                } else if( !local_checkBox.isChecked() && internet_checkBox.isChecked() ) {
+                    message_byte[index_to_fill_message_byte] = 'i';
+                } else if( local_checkBox.isChecked() && internet_checkBox.isChecked() ) {
+                    message_byte[index_to_fill_message_byte] = 'b';
+                }
+
+                index_to_fill_message_byte++;
+                message_byte[index_to_fill_message_byte] = trailor;
+
+                index_to_fill_message_byte++;
+                message_byte[index_to_fill_message_byte] = '\0';
 
                 return true;
             }
@@ -1491,8 +1547,8 @@ public class ConfigPanel extends AppCompatActivity {
                             if( max_sent_messages_number == 2 ) {
                                 connectToPanel_obeyIP.start();
                             }
-                            connectToPanel_networkConf = null;
-                            connectToPanel_obeyIP = null;
+                            //connectToPanel_networkConf = null; //not needed for now
+                            //connectToPanel_obeyIP = null; //not needed for now
                         }
                     }
                 });
@@ -1559,7 +1615,7 @@ public class ConfigPanel extends AppCompatActivity {
             return ret;
         }
 
-        int scrcoords[] = new int[2];
+        int[] scrcoords = new int[2];
         v.getLocationOnScreen( scrcoords );
         float x = event.getRawX() + v.getLeft() - scrcoords[0];
         float y = event.getRawY() + v.getTop() - scrcoords[1];
@@ -1594,27 +1650,31 @@ public class ConfigPanel extends AppCompatActivity {
         if( v instanceof EditText) {
             View w = getCurrentFocus();
             //Log.d("Activity", "Touch event "+event.getRawX()+","+event.getRawY()+" "+x+","+y+" rect "+w.getLeft()+","+w.getTop()+","+w.getRight()+","+w.getBottom()+" coords "+scrcoords[0]+","+scrcoords[1]);
-            if (event.getAction() == MotionEvent.ACTION_UP && (x < w.getLeft() || x >= w.getRight() || y < w.getTop() || y > w.getBottom())) {
-               // hideKeyboard();
-                //you can make the cursor disappear by putting the following below without the need
-                //to struggle with xml file...
-                SSID_EditText.clearFocus();
-                Password_EditText.clearFocus();
-                localPort1_EditText.clearFocus();
-                localPort2_EditText.clearFocus();
-                internetPort1_EditText.clearFocus();
-                internetPort2_EditText.clearFocus();
-                for (int i = 0; i < IP_Portions_Number; i++) {
-                    obeyingIP0_EditText[i].clearFocus();
-                    obeyingIP1_EditText[i].clearFocus();
-                    IP_EditText[i].clearFocus();
-                    gatewayIP_EditText[i].clearFocus();
-                    subnet_EditText[i].clearFocus();
-                    internetIP_EditText[i].clearFocus();
-                }
-                for (int i = 0; i < MAC_Portions_Number; i++)
-                    Mac_EditText[i].clearFocus();
+            try {
+                if (event.getAction() == MotionEvent.ACTION_UP && (x < w.getLeft() || x >= w.getRight() || y < w.getTop() || y > w.getBottom())) {
+                    // hideKeyboard();
+                    //you can make the cursor disappear by putting the following below without the need
+                    //to struggle with xml file...
+                    SSID_EditText.clearFocus();
+                    Password_EditText.clearFocus();
+                    localPort1_EditText.clearFocus();
+                    localPort2_EditText.clearFocus();
+                    internetPort1_EditText.clearFocus();
+                    internetPort2_EditText.clearFocus();
+                    for (int i = 0; i < IP_Portions_Number; i++) {
+                        obeyingIP0_EditText[i].clearFocus();
+                        obeyingIP1_EditText[i].clearFocus();
+                        IP_EditText[i].clearFocus();
+                        gatewayIP_EditText[i].clearFocus();
+                        subnet_EditText[i].clearFocus();
+                        internetIP_EditText[i].clearFocus();
+                    }
+                    for (int i = 0; i < MAC_Portions_Number; i++)
+                        Mac_EditText[i].clearFocus();
 
+                }
+            } catch (Exception e) {
+                Log.i("Config...", "Youssef/ NPE was thrown, caused by w.getLeft() ");
             }
         }
         return ret;

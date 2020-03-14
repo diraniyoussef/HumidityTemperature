@@ -10,8 +10,8 @@ public class ServerConfig {
         this.port2 = port2;
     }
 
-    String panel_name;
-    private String staticIP = "";
+    private String panel_name;
+    private String staticIP;
 
     private int port1; //choose good ports, e.g. 43111; doesn't work. 256 and 257 work.
     //static private int port1 = 11357;

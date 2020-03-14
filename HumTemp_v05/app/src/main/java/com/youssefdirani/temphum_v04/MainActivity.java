@@ -16,9 +16,8 @@ import androidx.appcompat.widget.Toolbar;
 //import androidx.fragment.app.Fragment;
 //import androidx.fragment.app.FragmentTransaction;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.lifecycle.MutableLiveData;
+//import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
-import androidx.navigation.NavDestination;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -27,10 +26,10 @@ import android.view.Menu;
 import android.widget.ToggleButton;
 
 import com.google.android.material.navigation.NavigationView;
+//import com.youssefdirani.temphum_v04.ui.temphum.TempHumFragment;
 
 public class MainActivity extends AppCompatActivity {
 
-    private NavController navController;
     private AppBarConfiguration mAppBarConfiguration;
     final public Toasting toasting = new Toasting( this );
     public String panel_index, panel_name, panel_type;
@@ -63,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                 R.id.nav_tools, R.id.nav_share, R.id.nav_send)
                 .setDrawerLayout(drawer)
                 .build();
-        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
         /* //this is working (tested and worked). This is not needed.
@@ -81,54 +80,64 @@ public class MainActivity extends AppCompatActivity {
         */
     }
 
+    public ToggleButton localInternet_toggleButton;
+//    public TempHumFragment shownFragmentLayout; //if you want to control the fragment class here from.
+
     protected void onResume() {
         super.onResume();
-        /*//cancelled as I made a dedicated activity for local or internet information fetching
-        final ToggleButton tb = findViewById(R.id.toggleButton_internet_local);
-        updateConnectionMeans(tb);
-        tb.setOnClickListener(new View.OnClickListener() {
+        /*You might argue that do I need to put this toggle button here instead of in the fragment ?
+        * Well, it's also very logical to put it in each fragment instead of here.
+        * Same question would go with the refresh button.
+         */
+        //Log.i("MainAct...", "Youssef/ Entering resume");//clearly only entered once even when navigating through fragment layouts
+
+        localInternet_toggleButton = findViewById(R.id.toggleButton_internet_local);
+        updateConnectionMeans( localInternet_toggleButton );
+        localInternet_toggleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("humtemp main", "inside tb setonclickListener");
-                updateConnectionMeans(tb);
+                Log.i("MainAct", "Youssef/ inside tb setonclickListener");
+                updateConnectionMeans( localInternet_toggleButton );
             }
         });
-
-        private void updateConnectionMeans( ToggleButton tb ) {
-            if( tb == null ) return;
-            if(tb.isChecked()) { //internet
-                //localNotInternet.setValue("internet");
-                tb.setTextColor( getTextColorPrimary() );
-                Log.i("HumTemp MainAct", "trying local connection");
-            } else {//local
-                //localNotInternet.setValue("local");
-                tb.setTextColor(Color.parseColor("#D81B60"));
-                Log.i("HumTemp MainAct", "trying internet connection");
-            }
-        }
-
-        private int getTextColorPrimary() { //getting text_color_primary. I could had simply searched for the color number, but it's ok.
-            TypedValue typedValue = new TypedValue();
-            Resources.Theme theme = this.getTheme();
-            theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
-            TypedArray arr = this.obtainStyledAttributes(typedValue.data, new int[]{
-                    android.R.attr.textColorPrimary
-            });
-            int primaryColor = arr.getColor(0, -1);
-            arr.recycle();
-            return primaryColor;
-        }
-         */
-
-        /* //this piece of code didn't work when panel_index was a public variable in HomeFragment
-        HomeFragment fragment_tempHum = (HomeFragment) getSupportFragmentManager().findFragmentById(R.id.nav_home);
+        /*
+        //Log.i("MainAct...", "Youssef/ fragments size is " + getSupportFragmentManager().getFragments().size() ); //working and value is 1
+        TempHumFragment fragment_tempHum = (TempHumFragment) getSupportFragmentManager().getFragments().get(0); //ok
+        Fragment fragment_tempHum = getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
         if( fragment_tempHum != null ) {
-            Log.i("Youssef", "fragment accessible and panel index is " + fragment_tempHum.panel_index);
+            Log.i("MainAct...", "Youssef/ fragment accessible and its tag is " + fragment_tempHum.getTag() );
         } else {
-            Log.i("Youssef", "fragment is null");
+            Log.i("MainAct...", "Youssef/ fragment is null");
         }
-         */
+        Log.i("MainAct...", "Youssef/ Id of nav_host_fragment is " +
+                getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment).getId() );
+        */
+
     }
+
+    private void updateConnectionMeans( ToggleButton tb ) {
+        if( tb == null ) return; //just protection
+        if(tb.isChecked()) { //internet
+            tb.setTextColor( getTextColorPrimary() );
+            Log.i("HumTemp MainAct", "trying local connection");
+        } else {//local
+            tb.setTextColor(Color.parseColor("#D81B60"));
+            Log.i("HumTemp MainAct", "trying internet connection");
+        }
+    }
+
+    private int getTextColorPrimary() { //getting text_color_primary. I could had simply searched for the color number, but it's ok.
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = this.getTheme();
+        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
+        TypedArray arr = this.obtainStyledAttributes(typedValue.data, new int[]{
+                android.R.attr.textColorPrimary
+        });
+        int primaryColor = arr.getColor(0, -1);
+        arr.recycle();
+        return primaryColor;
+    }
+
 
     //public MutableLiveData<String> localNotInternet = new MutableLiveData<>(); //this is to propagate the value to the fragment
     public String owner_part = "wehbe";
@@ -163,16 +172,7 @@ public class MainActivity extends AppCompatActivity {
                     this extra panel index. This is not relevant anymore. I'm only keeping it for compatibility but not used.*/
                 intent.setClass(getApplicationContext(), ConfigPanel.class);
                 startActivity(intent);
-                /*
-                //I added this code but it crashes with an NPE
-                FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                ft.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
-                Fragment fragment_send = getSupportFragmentManager().findFragmentById(R.id.nav_send);
-                HomeFragment fragment_tempHum = (HomeFragment) getSupportFragmentManager().findFragmentById(R.id.nav_home);
-                ft.hide(fragment_tempHum);
-                ft.show(fragment_send);
-                ft.commit();
-                */
+
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

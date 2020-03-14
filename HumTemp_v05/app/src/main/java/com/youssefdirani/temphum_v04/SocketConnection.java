@@ -36,7 +36,7 @@ public class SocketConnection { //some methods are not static in this class, thi
         this.localNotInternet = localNotInternet;
         selectedServerConfig = selectedServerConfig_arg;
         communication = new CommunicateWithServer( toasting, act, applicationContextParam, this,
-                selectedServerConfig.getPanelIndex(), selectedServerConfig.panel_name, number_of_data_chunks,
+                selectedServerConfig.getPanelIndex(), selectedServerConfig.getPanelName(), number_of_data_chunks,
                 localNotInternet, owner_part, mob_part, mob_Id );
         this.toasting = toasting;
         silentToast = isSilentToast;
@@ -49,13 +49,14 @@ public class SocketConnection { //some methods are not static in this class, thi
             //disableSwitches(); //user recognizes disabling so no need to toast.
             //if (createNewSocketAndEnableSwitches(active_client_index)) {
             if (createNewSocket(active_client_index)) {
-                Log.i("Youssef Serv...java", "finished creating a new socket client 0." + " For panel " + selectedServerConfig.panel_name);
+                Log.i("Youssef Serv...java", "finished creating a new socket client 0." +
+                        " For panel " + selectedServerConfig.getPanelName());
                 communication.delayToManipulateSockets.startTiming();
                 communication.setThreads(message, false);
             }
         } else {
             Log.i("Youssef Serv...java", "to initiate a new order without creating initially a new socket."
-                    + " For panel " + selectedServerConfig.panel_name);
+                    + " For panel " + selectedServerConfig.getPanelName());
             communication.setThreads(message, true);
         }
     }
@@ -84,14 +85,15 @@ public class SocketConnection { //some methods are not static in this class, thi
                     client[client_index].close(); //returns void    //this actually shows to the server since it's a proper closing of a socket.
                 //client[client_index] = null;
             }
-            Log.i("Youssef Serv...java","Now socket " + client_index + " is destroyed." + " For panel " + selectedServerConfig.panel_name);
+            Log.i("SocketConn...","Youssef/ Now socket " + client_index + " is destroyed." +
+                    " For panel " + selectedServerConfig.getPanelName());
         } catch (Exception e) {
             e.printStackTrace();
-            Log.i("Youssef Serv...java","Error in closing socket, printWriter, or reader................"
-                    + " For panel " + selectedServerConfig.panel_name);
+            Log.i("SocketConn...","Youssef/ Error in closing socket, printWriter, or reader................"
+                    + " For panel " + selectedServerConfig.getPanelName());
         }
     }
-
+/*
     void destroyAllSockets() {
         communication.delayToManipulateSockets.cancelTimer(); //usually there is a 2 minutes timer to manipulate the sockets, this should be cancelled.
         //it's like         communication.delayToManipulateSockets.cancelTimer();
@@ -101,7 +103,7 @@ public class SocketConnection { //some methods are not static in this class, thi
         destroySocket(1);
         active_client_index = -1;
     }
-
+*/
     boolean createNewSocket(int client_index_param) {
         //createSocketAsyncTaskInstance.execute();
         socketCreationSuccessful = true;
@@ -121,14 +123,14 @@ public class SocketConnection { //some methods are not static in this class, thi
             } catch (Exception e) {
                 //Thread.currentThread().interrupt();
                 e.printStackTrace();
-                Log.i("Youssef Serv...java","Error: Sleeping in createNewSocket." + " For panel " + selectedServerConfig.panel_name);
+                Log.i("Youssef Serv...java","Error: Sleeping in createNewSocket." + " For panel " + selectedServerConfig.getPanelName());
             }
         }
         if (iterationTimeout == socket_waitingData.maxIterations) { //wrongly it was before read_waitingData.maxIterations. Even now I'm not sure if it's needed
             //kill the asyncTask although not needed.
             newSocketIsCurrentlyUnderCreation = false;
             if( localNotInternet ) {
-                toasting.toast("Connection failed presumably for panel " + selectedServerConfig.panel_name + "\n" +
+                toasting.toast("Connection failed presumably for panel " + selectedServerConfig.getPanelName() + "\n" +
                         "You may check if electricity is down on the module.", Toast.LENGTH_SHORT, silentToast);
             } else {
                 toasting.toast("Couldn't connect to server.\n" +
@@ -181,7 +183,7 @@ public class SocketConnection { //some methods are not static in this class, thi
                 //client = new Socket(wiFiConnection.chosenIPConfig.staticIP, port); //should be further developed.
                 //client.connect(new InetSocketAddress(wiFiConnection.chosenIPConfig.staticIP, port), 1500);
                 client[index] = new Socket();
-                Log.i("Youssef Serv...java", "client[index " + index + "] is fine to connect to IP " +
+                Log.i("SocketConnec...", "Youssef/ client[index " + index + "] is fine to connect to IP " +
                         selectedServerConfig.getStaticIP() + " on port " + selectedServerConfig.getPortFromIndex(index));
                 //client.connect(new InetSocketAddress("192.168.4.201", port),1500);
                 client[index].connect( new InetSocketAddress(selectedServerConfig.getStaticIP(),
@@ -222,7 +224,7 @@ public class SocketConnection { //some methods are not static in this class, thi
                 Generic.toasting.toast("Couldn't connect.\nPlease turn on the WiFi to refresh...", Toast.LENGTH_LONG, silentToast);
 */
                 if ( localNotInternet ) {
-                    toasting.toast("Couldn't connect to panel " + selectedServerConfig.panel_name +
+                    toasting.toast("Couldn't connect to panel " + selectedServerConfig.getPanelName() +
                             "\nPlease try again later," +
                             "\nor check if electricity is down.", Toast.LENGTH_LONG, silentToast);
                 } else {

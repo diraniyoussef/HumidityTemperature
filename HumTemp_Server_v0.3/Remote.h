@@ -13,9 +13,10 @@ private:
   //the dummy part
   static constexpr char* dummy_buff = "dummy:\0";
 
-  static const int mob_Number = 1; //Don't forget to add "dummy" in the intermediate server.
+  static const int mob_Number = 2; //Don't forget to add "dummy" in the intermediate server.
   //const char* mob_i_Id_buff[ mob_Number ] = { dummy_buff, "S4:\0", "TrekStor_Tab:\0", "S7_Edge:\0"};
-  const char* mob_i_Id_buff[ mob_Number ] = { dummy_buff }; //"dummy" thing: If I were to use dummy at all (because ...), and if I were to make sure it is connected to the intermediate relay server, then I would be using the ack mechanism, and the incoming ack will have "dummy" in its signature, then I will have to have "dummy" in mob_i_Id_buff array.
+  const char* mob_i_Id_buff[ mob_Number ] = { dummy_buff, "mob1:\0" };
+  //const char* mob_i_Id_buff[ mob_Number ] = { dummy_buff }; //"dummy" thing: If I were to use dummy at all (because ...), and if I were to make sure it is connected to the intermediate relay server, then I would be using the ack mechanism, and the incoming ack will have "dummy" in its signature, then I will have to have "dummy" in mob_i_Id_buff array.
                                                                             // I won't use dummy here I'm using InformRemoteAPI which takes care of the connection reliability through its mechanism. (BUT THAT WASN'T ENOUGH SINCE WE NEED TO REGISTER AT THE INTERMEDIATE AT THE SOCKET SWITCH)
                                                                             // For the same reason I won't be sending Hi to intermediate because InformRemoteAPI takes care of connection reliablity through sending messages and receiving replies back (NOT AT SWITCHING TIME), and by these sent messages, this panel registers itself in the intermediate server.
   //const char* owner_id_buff = "Youssef_70853721:\0";
@@ -118,13 +119,13 @@ public:
   boolean analyze( boolean* is_ack_hi_received ){ 
     is_intelligible_message_context = false;    
     int lastColonOfIncomingMessage = getThirdOccurrenceOfCharInUsefulMessage( ':', reading_buff, read_char_number);
-    /*
+    
     if( read_char_number - 1 >= lastColonOfIncomingMessage + 2 ) { 
       if ( reading_buff[ lastColonOfIncomingMessage + 1 ] == 'R' && reading_buff[ lastColonOfIncomingMessage + 2 ] == '?' ) {
         is_intelligible_message_context = true;        
         the_request.pin = '\0'; 
         return (true);
-      */
+      }  
       /*//I'm leaving this for future use only. Many amendments may have to be made.
       } else {
         if (read_char_number - 1 >= lastColonOfIncomingMessage + 4){
@@ -158,22 +159,20 @@ public:
           //Serial.println("Useful received message is less than 3 chars and is not \"R?\"");
         }
         */
-      //} else {
-        if ( read_char_number - 1 >= lastColonOfIncomingMessage + 3 ) { 
-          if ( reading_buff[ lastColonOfIncomingMessage + 1 ] == 'A' && reading_buff[ lastColonOfIncomingMessage + 2 ] == 'C' && 
-                reading_buff[ lastColonOfIncomingMessage + 3 ] == 'K' ) {
-            //received an ack from intermediate (it's signed by dummy as the sender BTW)
-            *is_ack_hi_received = true;
-            Serial.println("In remote server: received an ack from Hi");
-            //not interested in returning true actually. Keeping that for report requests.
-          }
+      
+      if ( read_char_number - 1 >= lastColonOfIncomingMessage + 3 ) { 
+        if ( reading_buff[ lastColonOfIncomingMessage + 1 ] == 'A' && reading_buff[ lastColonOfIncomingMessage + 2 ] == 'C' && 
+              reading_buff[ lastColonOfIncomingMessage + 3 ] == 'K' ) {
+          //received an ack from intermediate (it's signed by dummy as the sender BTW)
+          *is_ack_hi_received = true;
+          Serial.println("In remote server: received an ack from Hi");
+          return true;
+          //not interested in returning true actually. Keeping that for report requests.
         }
-      //}
-    /*
+      }
     } else {
-      //Serial.println("Useful received message is less than 2 chars.");
-    }
-    */
+      Serial.println("Useful received message is less than 2 chars.");
+    }    
     return (false);
   }
 
@@ -282,7 +281,7 @@ public:
       Serial.printf("Reading totalMessage_buff[ i ] after putting the temperature in it. At i %d , totalMessage_buff[ i ] is %c\n", i, totalMessage_buff[ i ] );
     }   
     
-    last_length = last_length + TempHum::Temperature_Float_Size + 1;
+    last_length = last_length + TempHum::Temperature_Float_Size; //very wrong to add + 1
     
     return last_length;
   }
@@ -327,15 +326,20 @@ public:
   static void sendReport( AsyncClient* newest_async_client, const char* destination_id_buff ) {    
     NodeMCU::yieldAndDelay(); //I think this delay may be useful...
     int last_length = strlen( (const char*) owner_id_buff ) + strlen( (const char*) mod_id_buff ) + strlen( (const char*) destination_id_buff );  //strlen still works fine with destination_id_buff  
-    char* totalMessage_buff = new char[ last_length + 3 * PCF::absolute_max_pins_number + 2 ]; //the + 2 is the '\\' and the '\0'
+    //char* totalMessage_buff = new char[ last_length + 3 * PCF::absolute_max_pins_number + 2 ]; //the + 2 is the '\\' and the '\0'
+    //Serial.printf("Allocated size to totalMessage_buff is %d\n", last_length + TempHum::Humidity_Int_Size + 1 + TempHum::Temperature_Float_Size + 1  + 1);
+    char* totalMessage_buff = new char[ last_length + TempHum::Humidity_Int_Size + 1 + TempHum::Temperature_Float_Size + 2 ]; //the + 2 is the '\\' and the '\0'
     strcpy( totalMessage_buff, (const char*) owner_id_buff );
     strcat( totalMessage_buff, (const char*) mod_id_buff );
     strcat( totalMessage_buff, (const char*) destination_id_buff );       
     
-    last_length = addPinsToReport( totalMessage_buff, last_length );
+    //last_length = addPinsToReport( totalMessage_buff, last_length );
+    last_length = RemoteServerMessageOp::addTempAndHumToReport( totalMessage_buff, last_length );
+    
     totalMessage_buff[ last_length ] = '\\';
     totalMessage_buff[ last_length + 1] = '\0';
-
+    
+    //totalMessage_buff[ last_length ] = '\0'; //does not work unfortunately I guess.
     sendMessageToAsync( newest_async_client, totalMessage_buff );
 
     delete[] totalMessage_buff;
@@ -345,10 +349,13 @@ public:
     getRequesterId();
     if( mob_id_buff[0] != '\0' ) {//this is for authentication
       if( analyze( is_ack_hi_received ) ) { //this is to check if message context is intelligible
+        if( *is_ack_hi_received ) { //if has been set in analyze(..) call then it's an ack of HI.
+          return;
+        }
         //if( !remote_server_message_op1.isJustReport() ) {
         //  remote_server_message_op1.updatePinAndEEPROM();
         //}
-/*//I omitted the following since this panel won't get any report requests from any mobile app.    
+      //The following will be commented if this panel won't get any report requests from any mobile app.    
         if( remote_connection.async_client_2.connected() ) {
           Serial.printf("async_client_2 of IP %s is connected, so sending a report through it\n", remote_connection.IP );
           sendReport( &remote_connection.async_client_2 );
@@ -357,7 +364,7 @@ public:
           Serial.printf("async_client_1 of IP %s is connected, so sending a report through it\n", remote_connection.IP );
           sendReport( &remote_connection.async_client_1 );
         }
-*/
+
       }            
     } else {
       Serial.println("Remote server: unagreed signature maybe, but only for Remote Server, not necessarily for Inform Remote !");
@@ -670,6 +677,7 @@ private:
   RemoteServerMessageOp remote_server_message_op;
   InformRemoteAPI inform_remote_setter;
   InformEntity inform_remote;
+  boolean isInformRemote = false;
 
   //Now to control the sendHi and its ack
   int counter_to_ack_hi;
@@ -809,17 +817,23 @@ private:
   }
   
 public:
-  void setup() {
+  void setup( boolean isInformRemote ) {
     //remote_connection.setAsynchroClient( "91.240.81.106" , 3558 , 3559 ); //this is only setting, not connecting yet
+    //remote_connection.setAsynchroClient( "91.240.81.106" , 11359 , 11360 ); //this is only setting, not connecting yet
     //remote_connection.setAsynchroClient( "dirani.jvmhost.net" , 11360 , 11359 );
     //remote_connection.setAsynchroClient( "173.243.120.250" , 11360 , 11359 );
     //findRemoteServerIP(); //this is to evaluate remote_server_IP    
     //remote_connection.setAsynchroClient( (char*) remote_server_IP , 11360 , 11359 );    
-    remote_connection.setAsynchroClient( "74.122.199.173" , 11359 , 11360 );    
+//    remote_connection.setAsynchroClient( "74.122.199.173" , 11359 , 11360 );    
+    remote_connection.setAsynchroClient( "192.168.1.21" , 11359 , 11360 );    
     remote_server_message_op.setup( );
-
+    this->isInformRemote = isInformRemote;
+    
     //Now managing inform_remote
-    inform_remote_setter.setup( &inform_remote );
+    if( isInformRemote ) {
+      inform_remote_setter.setup( &inform_remote );
+    }
+    
     //Now for the sendHi and receiving the ack
     max_counter_to_ack_hi = floor( 8000 / delay_per_loop );
     counter_to_ack_hi = -1; //don't ask to rush right away
@@ -827,7 +841,9 @@ public:
 
   void stopOperations() {
     remote_connection.stopOperations();
-    inform_remote.stopOperations();
+    if( isInformRemote ) {
+      inform_remote.stopOperations();
+    }
     remote_server_message_op.stopOperations();
     counter_to_ack_hi = -1;
     preSetAckHi();
@@ -854,8 +870,10 @@ public:
           remote_server_message_op.processMessage( &is_ack_hi_received_1 ); //This usually checks incoming report requests or if Hi ack is received.
                                                                             // For this ordering panel, it's only useful for Hi ack
           //Now we check if the message has to do with InformEntity
-          inform_remote.checkIncomingMessageAndFixCounter( (char*) remote_connection.buff_1[ incoming_message1_index ], 
-                                                            remote_connection.len_buff_1[ incoming_message1_index ] );
+          if( isInformRemote ) {
+            inform_remote.checkIncomingMessageAndFixCounter( (char*) remote_connection.buff_1[ incoming_message1_index ], 
+                                                              remote_connection.len_buff_1[ incoming_message1_index ] );
+          }
         }
         remote_connection.message_in_processing_from_client_1[ incoming_message1_index ] = false;
       }
@@ -869,19 +887,23 @@ public:
                             remote_connection.buff_2[ incoming_message2_index ]);
           remote_server_message_op.processMessage( &is_ack_hi_received_2 );          
           //Now we check if the message has to do with InformEntity
-          inform_remote.checkIncomingMessageAndFixCounter( (char*) remote_connection.buff_2[ incoming_message2_index ], 
-                                                            remote_connection.len_buff_2[ incoming_message2_index ] );
+          if( isInformRemote ) {
+            inform_remote.checkIncomingMessageAndFixCounter( (char*) remote_connection.buff_2[ incoming_message2_index ], 
+                                                              remote_connection.len_buff_2[ incoming_message2_index ] );
+          }
         }
         remote_connection.message_in_processing_from_client_2[ incoming_message2_index ] = false;
       }
     }
 
     processAckHi();    
-    
-    inform_remote.informAllIfInPinChanged();
-    inform_remote.adjustCounterIfDisconnected();
-    inform_remote.resendReport_and_adjustCounter();   //we might rush in here.
 
+    if( isInformRemote ) {
+      inform_remote.informAllIfInPinChanged();
+      inform_remote.adjustCounterIfDisconnected();
+      inform_remote.resendReport_and_adjustCounter();   //we might rush in here.
+    }
+    
     postProcess();
   }
 

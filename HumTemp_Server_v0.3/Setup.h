@@ -7,20 +7,22 @@ const byte SSID_Buff_Size = 32;
 const byte Password_Buff_Size = 64;
 const byte Max_IP_Buff_Size = 4;
 const byte MAC_Buff_Size = 12;
+const byte LocalOrInternet_Buff_Size = 1;
 //#include <WiFiUdp.h>
 
 WiFiServer AP_server(3551); /*interesting why this cannot be a private member*/
 /* In the EEPROM or in the received buffer from the user, the info are like one of these: 
- * 6 -> Electrotel_Dirani -> trailor -> onlyforworkpls -> trailor -> header of static IP -> static IP -> trailor -> 
- *    header of gateway IP -> gateway IP -> trailor -> header of subnet -> subnet -> trailor -> mac -> trailor
- * 5 -> Electrotel_Dirani -> trailor -> header of static IP -> static IP -> trailor -> 
- *    header of gateway IP -> gateway IP -> trailor -> header of subnet -> subnet -> trailor -> mac -> trailor
- * 2 -> Electrotel_Dirani -> trailor -> onlyforworkpls -> trailor
- * 1 -> Electrotel_Dirani -> trailor
- * At maximum the size of the whole buffer is 1 + 32 + 1 + 64 + 2 + 4 + 2 + 4 + 2 + 4 + 1 + 12 + 1 = 130 bytes.
+ * 7 -> Electrotel_Dirani -> trailor -> onlyforworkpls -> trailor -> header of static IP -> static IP -> trailor -> 
+ *    header of gateway IP -> gateway IP -> trailor -> header of subnet -> subnet -> trailor -> mac -> trailor -> local_or_internet char -> trailor
+ * 6 -> Electrotel_Dirani -> trailor -> header of static IP -> static IP -> trailor -> 
+ *    header of gateway IP -> gateway IP -> trailor -> header of subnet -> subnet -> trailor -> mac -> trailor -> local_or_internet char -> trailor
+ * 3 -> Electrotel_Dirani -> trailor -> onlyforworkpls -> trailor -> local_or_internet char -> trailor
+ * 2 -> Electrotel_Dirani -> trailor -> local_or_internet char -> trailor
+ * The local_or_internet char is either 'l' for local, 'i' for Internet, 'b' for both
+ * At maximum the size of the whole buffer is 1 + 32 + 1 + 64 + 2 + 4 + 2 + 4 + 2 + 4 + 1 + 12 + 1 + 1 + 1 = 132 bytes.
  */
 const byte Max_AP_Buffer_Size = 1 + SSID_Buff_Size + 1 + Password_Buff_Size + 2 + Max_IP_Buff_Size + 2 + Max_IP_Buff_Size + 2 + Max_IP_Buff_Size + 1 +
-                              MAC_Buff_Size + 1; /*If more than a 255 (because in many places I used 'byte' and not 'int' to refer to the buffer) 
+                              MAC_Buff_Size + 1 + LocalOrInternet_Buff_Size + 1; /*If more than a 255 (because in many places I used 'byte' and not 'int' to refer to the buffer) 
                                                   * which is the byte size then something must be changed in the code below!*/
                               /*should'd been public inside the class*/
       
@@ -37,14 +39,14 @@ class AP_Op {
 private:  
   byte buffer_info[ Max_AP_Buffer_Size ];
   /*The following are 6 dedicated varables used to connect to wifi's router*/
-  byte determinant; //either 1, 2, 5, or 6. If '\n' then no network configuration is considered in EEPROM.
+  byte determinant; //either 2, 3, 6, or 7. If '\n' then no network configuration is considered in EEPROM.
   char SSID_buff[ SSID_Buff_Size ];  
   char password_buff[ Password_Buff_Size ];
   byte local_IP_bytes[ Max_IP_Buff_Size ];
   byte gateway_bytes[ Max_IP_Buff_Size ];
   byte subnet_bytes[ Max_IP_Buff_Size ];
   byte MAC_bytes[ 6 ]; /*these are fed to wifi_set_macaddr. The value will be set from the MAC chars in the buffer.*/
-
+  
 //  WiFiUDP Udp;
   int server_port = 3551;
   
@@ -62,16 +64,16 @@ private:
 
   void runAsAP() {
     /*will restart if failed to run as AP, but normally should never fail*/
-    //IPAddress local_IP(172,17,15,30); 
+    IPAddress local_IP(172,17,15,30); 
     /*this follows the list of private IP addresses from 172.16.0.0 to 172.31.255.255
             * where subnet fixes the first 12 bits (10101100 for the first byte, and 0001xxxx for the second byte), so subnet has to be
             * 255.240.0.0 according to https://en.wikipedia.org/wiki/Private_network */
     //IPAddress gateway(172,18,19,200); //let the gateway be the same as the local_IP, but maybe it works if 192.168.4.251 was the same gateway for all modules.
-    //IPAddress gateway(172,17,15,30);
-    //IPAddress subnet(255,240,0,0);
-    IPAddress local_IP(192,168,1,1);
-    IPAddress gateway(192,168,1,1);
-    IPAddress subnet(255,255,255,0);
+    IPAddress gateway(172,17,15,30);
+    IPAddress subnet(255,240,0,0);
+    //IPAddress local_IP(192,168,1,1);
+    //IPAddress gateway(192,168,1,1);
+    //IPAddress subnet(255,255,255,0);
     WiFi.mode(WIFI_AP); //never used !
     if( WiFi.softAPConfig(local_IP, gateway, subnet) ) {  
       Serial.println("runAsAP()   Setting soft-AP ... ");      
@@ -156,7 +158,7 @@ private:
   }
   
   boolean testValidityOfDeterminant() {
-    return( determinant == 1 || determinant == 2 || determinant == 5 || determinant == 6 ); //according to structure of code, this should never happen
+    return( determinant == 2 || determinant == 3 || determinant == 6 || determinant == 7 ); //according to structure of code, this should never happen
   }
 
   boolean checkNotExceedingMaxBuffSizeThenCopy( int first_index, int last_index, byte max_buff_size, char* destination_buff ) {
@@ -264,6 +266,34 @@ private:
     /*there won't be a char gotten from the user
     * which is '\0' since this char would had truncated the incoming buffer (message)*/
   }
+
+  boolean getLocalInternet( int last_index ) {
+    last_index++;
+    switch( buffer_info[ last_index ] ) {
+      case 'l':
+        isLocalServer = true;
+        isInternetServer = false;
+        break;
+      case 'i':
+        isLocalServer = false;
+        isInternetServer = true;
+        break;
+      case 'b':
+        isLocalServer = true;
+        isInternetServer = true;
+        break;
+      default:
+        return false;
+        break;
+    }         
+    
+    last_index++;
+    if( buffer_info[ last_index ] != trailor ) {
+      return false;
+    }
+
+    return true;
+  }
     
   boolean checkBuffAndAssignConfigVariables() {
     /*This analyzes buffer_info assuming that it has all the needed stuff ALREADY. 
@@ -314,7 +344,10 @@ private:
       determinant = trailor;/*it may not be necessary but it's ok*/
       return false;
     }    
-    if( determinant == 1 ) {
+    if( determinant == 2 ) {
+      if( !getLocalInternet( last_index ) ) {
+        return false;
+      }
       return true;
     }
     
@@ -327,23 +360,26 @@ private:
       return false;
     }    
     //we know the determinant is not 1
-    if( determinant == 2 || determinant == 6 ) {
+    if( determinant == 3 || determinant == 7 ) {
       if( !checkNotExceedingMaxBuffSizeThenCopy( first_index, last_index, Password_Buff_Size, (char*) password_buff ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed Password is greater than the permitted size");
         determinant = trailor;/*it may not be necessary but it's ok*/
         return false;
       }
-      if( determinant == 2 ) {
+      if( determinant == 3 ) {
+        if( !getLocalInternet( last_index ) ) {
+          return false;
+        }
         return true;
       }      
-    } else if( determinant == 5 ) {
+    } else if( determinant == 6 ) {
       if( !checkIP_HeaderThenCopy( first_index, last_index, local_IP_bytes ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed local IP is different than the specified size");
         determinant = trailor; /*it may not be necessary but it's ok*/
         return false;
       }      
     }
-    //now the determinant is either 5 or 6
+    //now the determinant is either 6 or 7
     //Getting the third chunk of data
     updateFirstAndLastIndices( &first_index, &last_index );
     if( first_index == last_index ) { //the case where 2 trailors are next to each other
@@ -351,13 +387,13 @@ private:
       determinant = trailor;/*it may not be necessary but it's ok*/
       return false;
     } 
-    if( determinant == 5 ) {
+    if( determinant == 6 ) {
       if( !checkIP_HeaderThenCopy( first_index, last_index, gateway_bytes ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed gateway IP is different than the specified size");
         determinant = trailor; /*it may not be necessary but it's ok*/
         return false;
       }      
-    } else if( determinant == 6 ) {
+    } else if( determinant == 7 ) {
       if( !checkIP_HeaderThenCopy( first_index, last_index, local_IP_bytes ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed local IP info aren't acceptable in decoding !");
         determinant = trailor; /*it may not be necessary but it's ok*/
@@ -372,13 +408,13 @@ private:
       determinant = trailor;/*it may not be necessary but it's ok*/
       return false;
     } 
-    if( determinant == 5 ) {
+    if( determinant == 6 ) {
       if( !checkIP_HeaderThenCopy( first_index, last_index, subnet_bytes ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed subnet IP is different than the specified size");
         determinant = trailor; /*it may not be necessary but it's ok*/
         return false;
       }
-    } else if( determinant == 6 ) {
+    } else if( determinant == 7 ) {
       if( !checkIP_HeaderThenCopy( first_index, last_index, gateway_bytes ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed gateway IP is different than the specified size");
         determinant = trailor; /*it may not be necessary but it's ok*/
@@ -393,14 +429,17 @@ private:
       determinant = trailor;/*it may not be necessary but it's ok*/
       return false;
     } 
-    if( determinant == 5 ) {
+    if( determinant == 6 ) {
       if( !checkMAC_BuffSizeThenCopy( first_index, last_index ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed MAC is rejected");
         determinant = trailor; /*it may not be necessary but it's ok*/
         return false;
       }      
+      if( !getLocalInternet( last_index ) ) {
+        return false;
+      }
       return true;
-    } else if( determinant == 6 ) {
+    } else if( determinant == 7 ) {
       if( !checkIP_HeaderThenCopy( first_index, last_index, subnet_bytes ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed gateway IP is different than the specified size");
         determinant = trailor; /*it may not be necessary but it's ok*/
@@ -415,12 +454,15 @@ private:
       determinant = trailor;/*it may not be necessary but it's ok*/
       return false;
     } 
-    if( determinant == 6 ) { /*We know for sure determinant is 6 but it's ok*/
+    if( determinant == 7 ) { /*We know for sure determinant is 6 but it's ok*/
       if( !checkMAC_BuffSizeThenCopy( first_index, last_index ) ) {
         Serial.println("checkBuffAndAssignConfigVariables()    the supposed MAC is rejected");
         determinant = trailor; /*it may not be necessary but it's ok*/
         return false;
       } 
+    }
+    if( !getLocalInternet( last_index ) ) {
+      return false;
     }
     return true;
   }
@@ -444,7 +486,7 @@ private:
     */
     byte trailor_counter = 0;
     while( true ) {
-      buffer_info[ i ] = (byte) EEPROM.read( Start_AP_Index_In_EEPROM  + i );      
+      buffer_info[ i ] = (byte) EEPROM.read( Start_AP_Index_In_EEPROM  + i );
       //Serial.printf("%d", buffer_info[ i ] );
       if( buffer_info[ i ] == trailor ) {
         trailor_counter++;
@@ -454,6 +496,11 @@ private:
       }
       i++;
     }
+    /* //this is commented because it will be made again in checkBuffAndAssignConfigVariables() below call.
+    if( trailor_counter != determinant ) {
+      ...
+    }
+    */
     Serial.printf("connectToRouterFromEEPROM_OrRestart()    position 2\n");
     //we really should return false if trailor_counter != determinant but I left this check to be done in checkBuffAndAssignConfigVariables()
     if( !checkBuffAndAssignConfigVariables() ) {
@@ -471,6 +518,9 @@ private:
 public:
   boolean must_APmode_be_activated = false; 
   boolean is_APmode_button_pressed = false;
+
+  boolean isLocalServer = true; //this variable is used in the main sketch file
+  boolean isInternetServer = true; //this variable is used in the main sketch file
 
   void check_APmode_pin() {/*only accessed when not in AP mode*/
     if( NodeMCU::getInPinStateAsConsidered( AP_setup_pin ) ) { /*user is asking to enter AP mode, e.g. he's pressing a special button for that*/
@@ -582,21 +632,21 @@ public:
     }
     */
     if ( WiFi.mode(WIFI_STA) ) {   //please follow this order: WiFi.config, then WiFi.mode(WIFI_STA) then WiFi.begin. https://github.com/esp8266/Arduino/issues/2371      
-      if( determinant == 1 ) {
+      if( determinant == 2 ) {
         WiFi.begin( SSID_buff );
       }
-      if( determinant == 2 ) {
+      if( determinant == 3 ) {
         WiFi.begin( SSID_buff, password_buff );
       }
-      if( determinant == 5 || determinant == 6 ) {
+      if( determinant == 6 || determinant == 7 ) {
         if( wifi_set_macaddr(STATION_IF, MAC_bytes) ) {
           IPAddress local_IP( local_IP_bytes[0], local_IP_bytes[1], local_IP_bytes[2], local_IP_bytes[3] );  //This will change for each NodeMCU
           IPAddress gateway( gateway_bytes[0], gateway_bytes[1], gateway_bytes[2], gateway_bytes[3] );       //This is gotten from the user local network configuration
           IPAddress subnet( subnet_bytes[0], subnet_bytes[1], subnet_bytes[2], subnet_bytes[3] );      //This is gotten from the user local network configuration
           if ( WiFi.config(local_IP, gateway, gateway, subnet) ) {//this allocates a static IP.  //comment for debugging in case this NodeMCU will use the DHCP of the local network router     
-            if( determinant == 5 ) {
+            if( determinant == 6 ) {
               WiFi.begin( SSID_buff );
-            } else if( determinant == 6 ) {
+            } else if( determinant == 7 ) {
               WiFi.begin( SSID_buff, password_buff ); //Nothing would happen if we executed this twice - tested.
             }
           } else {

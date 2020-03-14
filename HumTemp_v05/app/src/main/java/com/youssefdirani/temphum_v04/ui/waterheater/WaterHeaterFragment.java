@@ -1,6 +1,7 @@
 package com.youssefdirani.temphum_v04.ui.waterheater;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,7 +48,7 @@ public class WaterHeaterFragment extends Fragment {
         }
 
         //Among the shared preferences attributes, we usually care about the static IP string, the local boolean, and the internet boolean.
-
+        Log.i( "WaterHeaterFragment", "id is " + this.getId() );
 
     }
 }

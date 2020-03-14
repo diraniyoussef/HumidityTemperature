@@ -528,7 +528,7 @@ public:
         setOutPinStateAsConsidered( General::getIntFromHexChar( pinChar ) , boolPinState ); //we're concerned with D3 and D4
         //We know that pinchar is found for the first time at index 2*i, but is it repeated for any reason at another 2*j where j > i ? 
         // If it's repeated I will have to free it in 2*j place.        
-        for (int j = i + 1 ; j < PCF::absolute_max_pins_number; j++) {
+        for( int j = i + 1 ; j < PCF::absolute_max_pins_number; j++ ) {
           if ( EEPROM.read(2*j) == pinChar ) {
             Serial.printf("During EEPROM decoding, found a duplicate of char %c at place %d\n", pinChar, 2*j);
             EEPROM.write(2*j, '-');
